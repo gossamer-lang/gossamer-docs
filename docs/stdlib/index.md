@@ -97,7 +97,7 @@ For receiver methods on built-in types, see [`Methods by type`](../method_suppor
 | [`std::os::signal`](os_signal.md) | POSIX-style signal subscription (Go's os/signal shape). |
 | [`std::os::user`](os_user.md) | POSIX user / group lookup. Unix-backed by `nix`; Windows falls back to env vars. |
 | [`std::panic`](panic.md) | Goroutine-scoped panics; there is no `catch_unwind`, and `runtime::set_panic_hook` observes one. |
-| [`std::path`](path.md) | Lexical filesystem-path operations; platform path grammar, no URL parsing. |
+| [`std::path`](path.md) | Lexical filesystem-path operations; one grammar on every platform (`/` and `\` separate, roots `/`, `C:/`, `//host/share`), no URL parsing. |
 | [`std::pprof`](pprof.md) | Runtime profiles in the text format `go tool pprof` reads, plus a Chrome-trace scheduler capture. |
 | [`std::process`](process.md) | Canonical process control and child-process API; std::os::exec is compatibility-only. |
 | [`std::regex`](regex.md) | Compiled regular expressions (Rust `regex` crate syntax; no backreferences or look-around). |

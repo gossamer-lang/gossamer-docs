@@ -67,6 +67,15 @@ jobs:
         with:
           repository: gossamer-lang/gui-gos
           path: deps/gui-gos
+      # The ecosystem pages build the windowing and GUI bindings, and SDL's
+      # CMake configure stops without X11 or Wayland headers.
+      - name: Install SDL's build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build pkg-config \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libxss-dev libxfixes-dev libxtst-dev libxkbcommon-dev libwayland-dev \
+            wayland-protocols libegl-dev libgl-dev libdecor-0-dev
       - uses: dtolnay/rust-toolchain@1.95.0
       - run: rustup set profile minimal
       - uses: Swatinem/rust-cache@v2

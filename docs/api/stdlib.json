@@ -14161,7 +14161,7 @@
       "name": "std::path::is_absolute",
       "kind": "function",
       "signature": "fn is_absolute(path: String) -> bool",
-      "description": "Reports whether the path is absolute.",
+      "description": "Reports whether the path begins with a root: `/`, a drive (`C:/`), or a UNC share (`//host/share`).",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -14180,7 +14180,7 @@
       "name": "std::path::join",
       "kind": "function",
       "signature": "fn join(base: String, segment: String) -> String",
-      "description": "Joins two path fragments.",
+      "description": "Joins two path fragments with `/`; an absolute second fragment replaces the first.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",

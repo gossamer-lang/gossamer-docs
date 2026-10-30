@@ -1,12 +1,12 @@
 # `std::path`
 
-Lexical filesystem-path operations; platform path grammar, no URL parsing.
+Lexical filesystem-path operations; one grammar on every platform (`/` and `\` separate, roots `/`, `C:/`, `//host/share`), no URL parsing.
 
 ## Items
 
 | Item | Signature | Description |
 |---|---|---|
-| `join` | `fn join(base: String, segment: String) -> String` | Joins two path fragments. |
+| `join` | `fn join(base: String, segment: String) -> String` | Joins two path fragments with `/`; an absolute second fragment replaces the first. |
 | `walk` | `fn walk(path: String, visit: Fn(fs::DirInfo) -> Result<(), io::Error>) -> Result<(), io::Error>` | Recursively visits every descendant entry under a directory, the path-module spelling of fs::walk_dir. |
 | `components` | `fn components(path: String) -> Vec<String>` | Returns Rust-like lexical path components. |
 | `prefixes` | `fn prefixes(path: String) -> Vec<String>` | Returns cumulative Rust-like lexical path prefixes. |
@@ -16,7 +16,7 @@ Lexical filesystem-path operations; platform path grammar, no URL parsing.
 | `file_name` | `fn file_name(path: String) -> Option<String>` | Final path component, or None. |
 | `file_stem` | `fn file_stem(path: String) -> Option<String>` | File name without its extension. |
 | `extension` | `fn extension(path: String) -> Option<String>` | Dotted extension as an Option. |
-| `is_absolute` | `fn is_absolute(path: String) -> bool` | Reports whether the path is absolute. |
+| `is_absolute` | `fn is_absolute(path: String) -> bool` | Reports whether the path begins with a root: `/`, a drive (`C:/`), or a UNC share (`//host/share`). |
 | `normalize` | `fn normalize(path: String) -> String` | Lexically normalizes the path. |
 | `starts_with` | `fn starts_with(path: String, prefix: String) -> bool` | Reports whether the path begins with a prefix component-wise. |
 | `matches` | `fn matches(pattern: String, name: String) -> bool` | `matches(pattern, name) -> bool` - Go `filepath.Match` shell-glob test over a single path segment: `*` and `?` never cross a `/`, `[abc]` is a character class. Spelled `matches` because `match` is a keyword. Example: `path::matches("*.gos", "main.gos")` is true, `path::matches("a*c", "a/c")` is false. |
