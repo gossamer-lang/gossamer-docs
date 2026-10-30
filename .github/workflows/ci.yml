@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  # The Gossamer sources the generated pages, the checked examples and the
+  # playground are compared with.
+  GOSSAMER_REF: main
+  # Dispatch the rustup proxy straight to the toolchain Gossamer's own CI
+  # uses and skip its rust-toolchain.toml read, as gossamer's ci.yml does.
+  RUSTUP_TOOLCHAIN: 1.95.0
+
+jobs:
+  site:
+    name: mkdocs build (--strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: mkdocs build --strict
+
+  # The pages Gossamer's sources generate must match what they generate now,
+  # every documented feature must have its page, and every example the docs,
+  # the tour and the home page show must still check or run. The ecosystem
+  # pages are checked against the libraries they document.
+  against-gossamer:
+    name: Generated pages and checked examples
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GOSSAMER_SRC: ${{ github.workspace }}/deps/gossamer
+      GOS: ${{ github.workspace }}/deps/gossamer/target/debug/gos
+      WINDOWING_GOS: ${{ github.workspace }}/deps/windowing-gos
+      GUI_ENGINE_GOS: ${{ github.workspace }}/deps/gui-engine-gos
+      GUI_GOS: ${{ github.workspace }}/deps/gui-gos
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: gossamer-lang/gossamer
+          ref: ${{ env.GOSSAMER_REF }}
+          path: deps/gossamer
+      - uses: actions/checkout@v6
+        with:
+          repository: gossamer-lang/windowing-gos
+          path: deps/windowing-gos
+      - uses: actions/checkout@v6
+        with:
+          repository: gossamer-lang/gui-engine-gos
+          path: deps/gui-engine-gos
+      - uses: actions/checkout@v6
+        with:
+          repository: gossamer-lang/gui-gos
+          path: deps/gui-gos
+      - uses: dtolnay/rust-toolchain@1.95.0
+      - run: rustup set profile minimal
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: deps/gossamer
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Build gos
+        working-directory: deps/gossamer
+        run: cargo build --bin gos
+      - name: Generated pages are in sync and every feature has its page
+        run: tools/generated.sh --check
+      - name: Every fence, tour lesson and home-page listing checks or runs
+        if: ${{ !cancelled() }}
+        run: '"$GOS" run tools/check-docs.gos "$GOSSAMER_SRC"'
+
+  # wasm32-unknown-unknown has no unwinder, so a Rust panic under the
+  # playground's `run` aborts the module and the page gets a bare
+  # `RuntimeError: unreachable`. Every program the site runs in the
+  # browser - the tour's lessons and the home page's listings - must
+  # finish without one.
+  playground:
+    name: Site programs through the playground wasm
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: docs
+      - uses: actions/checkout@v6
+        with:
+          repository: gossamer-lang/gossamer
+          ref: ${{ env.GOSSAMER_REF }}
+          path: gossamer
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          targets: wasm32-unknown-unknown
+      - run: rustup set profile minimal
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: gossamer
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Resolve wasm-bindgen-cli version from Gossamer's Cargo.lock
+        # The CLI and the crate must be the same version; a mismatch is a
+        # hard "schema version" error at bindgen time.
+        run: |
+          WBVER=$(grep -A1 '^name = "wasm-bindgen"$' gossamer/Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p' | head -1)
+          echo "WBVER=$WBVER" >> "$GITHUB_ENV"
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen-cli@${{ env.WBVER }}
+      - name: Build gos
+        working-directory: gossamer
+        run: cargo build --bin gos
+      - name: Run the site's programs through the wasm runtime
+        working-directory: gossamer
+        run: ./target/debug/gos run scripts/playground_smoke.gos --site "$GITHUB_WORKSPACE/docs"

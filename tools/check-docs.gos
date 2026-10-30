@@ -1,0 +1,431 @@
+// Checks the documentation against the toolchain it describes.
+//
+// - Every Gossamer fence under docs/ is a program `gos check` accepts, unless
+//   the line before it says otherwise: `<!-- fragment -->` marks a piece of a
+//   larger program the prose describes, `<!-- compile_fail CODE -->` an
+//   example that must be rejected with that diagnostic, and
+//   `<!-- output: TEXT -->` one `gos run` must print TEXT from (`\n`
+//   separates lines). A fence under docs/ecosystem/<library>/ is checked as
+//   the main file of a project that depends on that library, the way an
+//   application uses it.
+// - Every tour lesson and every home-page listing runs to a successful exit:
+//   one that no longer parses, type-checks, or runs teaches the wrong
+//   spelling.
+// - The playground's advertised run shortcut outranks CodeMirror's own
+//   binding for the same chord.
+// - The docs header reads the repository's facts live from GitHub.
+// - docs/supported_targets.md classifies every target in Gossamer's target
+//   matrix.
+//
+// Usage: gos run tools/check-docs.gos [GOSSAMER_SRC]
+//
+// Run it from the repository root. GOS names the gos binary to check with
+// (default `gos`). GOSSAMER_SRC (default ../gossamer) is the checkout whose
+// conformance/target_matrix.tsv is read. WINDOWING_GOS, GUI_ENGINE_GOS and
+// GUI_GOS name the library checkouts the ecosystem pages are checked against;
+// each defaults to a directory of that name beside this repository or in
+// ../goose-libs.
+
+use std::{env, fs, path, process}
+use std::process::Command
+
+/// What a fence's marker asks of it.
+enum Expect {
+    Checks
+    Fragment
+    Rejected(String)
+    Prints(String)
+}
+
+struct Fence {
+    place: String
+    expect: Expect
+    code: String
+}
+
+/// A library the ecosystem pages document: its pages' directory under
+/// docs/ecosystem and the checkouts a program using it depends on. The
+/// libraries name each other by release tag; a program's own path
+/// declaration of each stands in for its tag, so the pages are checked
+/// against the checkouts.
+struct Library {
+    pages: String
+    checkouts: Vec<String>
+}
+
+/// The checkout of library repository `name`.
+fn checkout(variable: String, name: String) -> String {
+    if let Some(dir) = env::var(variable) {
+        return dir
+    }
+    let sibling = path::join("..", name)
+    if fs::is_file(path::join(sibling, "project.toml")) {
+        return sibling
+    }
+    path::join("../goose-libs", name)
+}
+
+fn libraries() -> Vec<Library> {
+    let windowing = checkout("WINDOWING_GOS", "windowing-gos")
+    let engine = checkout("GUI_ENGINE_GOS", "gui-engine-gos")
+    let gui = checkout("GUI_GOS", "gui-gos")
+    #[
+        Library { pages: "windowing", checkouts: #[windowing] }
+        Library { pages: "gui-engine", checkouts: #[engine, windowing] }
+        Library { pages: "gui", checkouts: #[gui, engine, windowing] }
+    ]
+}
+
+/// The project id `checkout`'s manifest declares.
+fn project_id(checkout: String) -> String {
+    for line in read(path::join(checkout, "project.toml")).lines() {
+        if line.starts_with("id ") || line.starts_with("id=") {
+            return line.split("\"")[1]
+        }
+    }
+    eprintln("check-docs: {}/project.toml declares no id", checkout)
+    process::exit(1)
+}
+
+/// A scratch project in `dir` whose main file programs are written to, with
+/// a path dependency on each of `checkouts`.
+fn library_project(dir: String, checkouts: Vec<String>) -> String {
+    let mut manifest = "[project]\nid = \"dev.gossamer/docs-fence\"\nversion = \"0.1.0\"\n\n[dependencies]\n"
+    for checkout in checkouts {
+        let root = match fs::canonicalize(checkout) {
+            Ok(root) => root
+            Err(e) => {
+                eprintln("check-docs: library checkout {}: {}", checkout, e)
+                process::exit(1)
+            }
+        }
+        manifest += f"\"{project_id(root)}\" = {{ path = {root:?} }}\n"
+    }
+    if let Err(e) = fs::create_dir_all(path::join(dir, "src")) {
+        eprintln("check-docs: creating {}: {}", dir, e)
+        process::exit(1)
+    }
+    if let Err(e) = fs::write(path::join(dir, "project.toml"), manifest.bytes()) {
+        eprintln("check-docs: writing the {} project: {}", dir, e)
+        process::exit(1)
+    }
+    dir
+}
+
+fn gos() -> String {
+    env::var("GOS").unwrap_or("gos")
+}
+
+/// Every Markdown file under `dir`, sorted so a failure names the same file
+/// whatever order the filesystem hands them back in.
+fn markdown_files(dir: String) -> Vec<String> {
+    let mut found = #[]
+    match fs::read_dir(dir) {
+        Ok(entries) => {
+            for entry in entries {
+                if entry.is_dir {
+                    found.extend(markdown_files(entry.path))
+                } else if entry.is_file && entry.name.ends_with(".md") {
+                    found.push(entry.path)
+                }
+            }
+        }
+        Err(e) => {
+            eprintln("check-docs: reading {}: {}", dir, e)
+            process::exit(1)
+        }
+    }
+    found.sort()
+    found
+}
+
+fn read(file: String) -> String {
+    match fs::read_to_string(file) {
+        Ok(text) => text
+        Err(e) => {
+            eprintln("check-docs: reading {}: {}", file, e)
+            process::exit(1)
+        }
+    }
+}
+
+fn marker_expectation(marker: String) -> Expect {
+    if marker == "<!-- fragment -->" {
+        return Expect::Fragment
+    }
+    if marker.starts_with("<!-- compile_fail ") && marker.ends_with(" -->") {
+        let code = marker.substring(18, marker.byte_len() - 4).trim()
+        return Expect::Rejected(code)
+    }
+    if marker.starts_with("<!-- output: ") && marker.ends_with(" -->") {
+        let text = marker.substring(13, marker.byte_len() - 4)
+        return Expect::Prints(text.replace("\\n", "\n") + "\n")
+    }
+    Expect::Checks
+}
+
+fn fences_in(file: String) -> Vec<Fence> {
+    let lines = read(file).lines()
+    let mut fences = #[]
+    let mut marker = ""
+    let mut i = 0
+    while i < lines.len() {
+        let info = lines[i].trim_start()
+        if info != "```gossamer" && info != "```gos" {
+            if !lines[i].trim().is_empty() {
+                marker = lines[i].trim()
+            }
+            i += 1
+            continue
+        }
+        let start = i + 1
+        let mut end = start
+        while end < lines.len() && lines[end].trim_start() != "```" {
+            end += 1
+        }
+        let body = lines[start..end].join("\n") + "\n"
+        fences.push(Fence { place: f"{file}:{i + 1}", expect: marker_expectation(marker), code: body })
+        marker = ""
+        i = end + 1
+    }
+    fences
+}
+
+fn first_error(report: String) -> String {
+    report.lines().iter().find(|l| l.starts_with("error")).unwrap_or("")
+}
+
+/// The scratch project a fence in `file` is checked in, or "" for a fence
+/// that is a program of its own.
+fn project_for(file: String, projects: Vec<(String, String)>) -> String {
+    for (pages, project) in projects {
+        if file.starts_with(path::join("docs/ecosystem", pages) + "/") {
+            return project
+        }
+    }
+    ""
+}
+
+fn check_fences(scratch: String, failures: &mut Vec<String>) -> i64 {
+    let mut projects = #[]
+    for library in libraries() {
+        let dir = path::join(scratch, f"project-{library.pages}")
+        projects.push((library.pages, library_project(dir, library.checkouts)))
+    }
+    let mut checked = 0
+    for file in markdown_files("docs") {
+        let project = project_for(file, projects)
+        for fence in fences_in(file) {
+            if fence.expect == Expect::Fragment {
+                continue
+            }
+            checked += 1
+            let program = if project.is_empty() {
+                path::join(scratch, f"fence_{checked}.gos")
+            } else {
+                path::join(project, "src/main.gos")
+            }
+            if let Err(e) = fs::write(program, fence.code.bytes()) {
+                failures.push(f"{fence.place}: writing the fence: {e}")
+                continue
+            }
+            let verb = match fence.expect {
+                Expect::Prints(_) => "run"
+                _ => "check"
+            }
+            let dir = if project.is_empty() { "." } else { project }
+            let out = match Command::new(gos()).args(#[verb, program]).dir(dir).output() {
+                Ok(out) => out
+                Err(e) => {
+                    failures.push(f"{fence.place}: running {gos()}: {e}")
+                    continue
+                }
+            }
+            let report = out.stdout + out.stderr
+            match fence.expect {
+                Expect::Checks => if out.code != 0 { failures.push(f"{fence.place}: {first_error(report)}") }
+                Expect::Rejected(code) => if !report.contains(f"error[{code}]") {
+                    failures.push(f"{fence.place}: expected {code}, got: {report.trim()}")
+                }
+                Expect::Prints(text) => if out.stdout != text {
+                    failures.push(f"{fence.place}: expected output {text:?}, got: {report.trim()}")
+                }
+                Expect::Fragment => ()
+            }
+        }
+    }
+    checked
+}
+
+/// A JavaScript template literal's text, from `body` up to its closing
+/// backtick: each backslash escape stands for the character after it.
+fn template_text(body: String) -> String {
+    let mut text = String::new()
+    let mut escaped = false
+    for c in body {
+        if !escaped && c == '`' {
+            return text
+        }
+        if !escaped && c == '\\' {
+            escaped = true
+            continue
+        }
+        text.push(c)
+        escaped = false
+    }
+    text
+}
+
+/// The tour's lesson programs, each as its slug and source, in page order.
+fn tour_lessons(source: String) -> Vec<(String, String)> {
+    let slugs = source.split("slug: \"").iter().skip(1).map(|piece| piece.split("\"")[0]).collect()
+    let codes = source.split("    code: `").iter().skip(1).map(template_text).collect()
+    slugs.iter().zip(codes.iter()).collect()
+}
+
+/// The home page's Gossamer listings, with the markup's entities decoded.
+fn landing_listings(page: String) -> Vec<String> {
+    page.split("<code class=\"language-gossamer\">")
+        .iter()
+        .skip(1)
+        .map(|piece| {
+            piece.split("</code>")[0]
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&#39;", "'")
+                .replace("&amp;", "&")
+        })
+        .collect()
+}
+
+/// Runs each program, recording the ones that do not exit successfully.
+fn check_runs(scratch: String, programs: Vec<(String, String)>, failures: &mut Vec<String>) {
+    for (name, code) in programs {
+        let file = path::join(scratch, f"{name}.gos")
+        if let Err(e) = fs::write(file, code.bytes()) {
+            failures.push(f"{name}: writing the program: {e}")
+            continue
+        }
+        match process::run(gos(), #["run", file]) {
+            Ok(out) => if out.code != 0 { failures.push(f"{name} no longer runs:\n{out.stderr.trim()}") }
+            Err(e) => failures.push(f"{name}: running {gos()}: {e}")
+        }
+    }
+}
+
+fn check_site_programs(scratch: String, failures: &mut Vec<String>) {
+    let lessons = tour_lessons(read("landing/tour/tour.js"))
+    if lessons.len() < 30 {
+        failures.push(f"the tour should carry its full lesson set, found {lessons.len()}")
+    }
+    check_runs(scratch, lessons.map(|(slug, code)| (f"tour lesson {slug}", code)), failures)
+    let listings = landing_listings(read("landing/index.html"))
+    if listings.len() < 5 {
+        failures.push(f"the home page should carry its full listing set, found {listings.len()}")
+    }
+    let mut named = #[]
+    for (index, code) in listings.iter().enumerate() {
+        named.push((f"home listing {index}", code))
+    }
+    check_runs(scratch, named, failures)
+}
+
+// `basicSetup` carries CodeMirror's default keymap, whose `Mod-Enter` inserts
+// a blank line. A binding registered at ordinary precedence sits behind it, so
+// the chord the page advertises has to come in at the highest precedence.
+fn check_playground_shortcut(failures: &mut Vec<String>) {
+    let source = read("landing/playground/playground.js")
+    if !read("landing/playground/index.html").contains("Ctrl / Cmd + Enter to run") {
+        failures.push("the playground page no longer advertises the run shortcut")
+    }
+    let Some(binding) = source.find("\"Mod-Enter\"") else {
+        failures.push("playground.js no longer binds Mod-Enter")
+        return
+    }
+    let before = source.substring(0, binding)
+    let Some(wrapper) = before.rfind("Prec.highest(") else {
+        failures.push("the Mod-Enter binding is not registered through Prec.highest")
+        return
+    }
+    let between = before.substring(wrapper, binding)
+    if !between.contains("keymap.of(") || between.contains("basicSetup") {
+        failures.push("the Mod-Enter binding is not the keymap Prec.highest wraps")
+    }
+}
+
+fn check_repo_facts(failures: &mut Vec<String>) {
+    let mkdocs = read("mkdocs.yml")
+    let script = read("docs/js/repo_button.js")
+    let css = read("docs/stylesheets/extra.css")
+    let rules = #[
+        (mkdocs.contains("  - js/repo_button.js"), "mkdocs.yml must load repo_button.js")
+        (script.contains("https://api.github.com/repos/gossamer-lang/gossamer"), "repo header facts must come from GitHub at runtime")
+        (script.contains("cache: \"no-store\""), "repo header fetches must not reuse stale browser cache entries")
+        (script.contains("__source"), "Material's source-fact session cache must be cleared")
+        (script.contains("/releases/latest") && script.contains("/tags?per_page=1"), "the displayed version must be fetched from releases or tags")
+        (script.contains("STAR_ICON") && script.contains("FORK_ICON"), "star and fork facts must render with icons")
+        (css.contains(".gos-source-fact-icon") && css.contains("color: currentColor"), "repo facts must inherit the visible source link color across themes")
+    ]
+    for (ok, why) in rules {
+        if !ok {
+            failures.push(why)
+        }
+    }
+}
+
+fn check_supported_targets(gossamer: String, failures: &mut Vec<String>) {
+    let docs = read("docs/supported_targets.md")
+    let matrix = read(path::join(gossamer, "conformance/target_matrix.tsv"))
+    for line in matrix.lines() {
+        if line.is_empty() || line.starts_with("#") {
+            continue
+        }
+        let fields = line.split("\t")
+        if fields.len() != 4 {
+            failures.push(f"invalid target matrix row {line:?}")
+            continue
+        }
+        let marker = match fields[0] {
+            "tier1" => "Tier 1"
+            "tier2" => "Tier 2"
+            "artifact" => "Artifact-only"
+            "registered" => "Registered, unsupported"
+            other => {
+                failures.push(f"unknown support class {other:?} for {fields[1]}")
+                continue
+            }
+        }
+        if !docs.contains(fields[1]) || !docs.contains(marker) {
+            failures.push(f"docs/supported_targets.md must classify {fields[1]} as {marker}")
+        }
+    }
+}
+
+fn main() {
+    let gossamer = env::args().first().unwrap_or(env::var("GOSSAMER_SRC").unwrap_or("../gossamer"))
+    let scratch = match fs::temp_dir("gos-check-docs-") {
+        Ok(dir) => dir
+        Err(e) => {
+            eprintln("check-docs: {}", e)
+            process::exit(1)
+        }
+    }
+    defer fs::remove_dir_all(scratch)
+    let mut failures = #[]
+    let fences = check_fences(scratch, &mut failures)
+    if fences == 0 {
+        failures.push("no fences found under docs/")
+    }
+    check_site_programs(scratch, &mut failures)
+    check_playground_shortcut(&mut failures)
+    check_repo_facts(&mut failures)
+    check_supported_targets(gossamer, &mut failures)
+    if !failures.is_empty() {
+        for failure in failures {
+            eprintln("check-docs: {}", failure)
+        }
+        process::exit(1)
+    }
+    println(f"check-docs: ok ({fences} fences, the tour, the home page, the playground and the target matrix)")
+}

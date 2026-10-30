@@ -1,0 +1,107 @@
+name: Publish site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # Sent by Gossamer when the toolchain the playground compiles changes.
+  repository_dispatch:
+    types: [gossamer-updated]
+
+env:
+  # The Gossamer sources the playground and the version tag come from.
+  GOSSAMER_REF: main
+  # Pin the rustup proxy to the toolchain the wasm32 target is installed on;
+  # without it the proxy reads Gossamer's rust-toolchain.toml and dispatches
+  # to a toolchain the target is invisible to.
+  RUSTUP_TOOLCHAIN: 1.95.0
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Only `main` publishes, including a manual run started elsewhere.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      GOSSAMER_SRC: ${{ github.workspace }}/deps/gossamer
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: gossamer-lang/gossamer
+          ref: ${{ env.GOSSAMER_REF }}
+          path: deps/gossamer
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      # The build writes the docs to site/docs/ and the landing pages, with
+      # Gossamer's version stamped on the home page, to the site root.
+      - name: Build the site
+        run: mkdocs build --strict
+      # Compile the Try Gossamer playground (the bytecode VM) to wasm and
+      # drop the wasm-bindgen module into site/playground/, replacing the
+      # JS stub the component falls back to when the module is absent.
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: deps/gossamer
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Resolve wasm-bindgen-cli version from Gossamer's Cargo.lock
+        # The CLI version must match the wasm-bindgen crate version exactly
+        # (a mismatch is a hard "schema version" error), so pin it to whatever
+        # Cargo.lock resolves rather than a floating range.
+        run: |
+          WBVER=$(grep -A1 '^name = "wasm-bindgen"$' deps/gossamer/Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p' | head -1)
+          echo "pinning wasm-bindgen-cli to $WBVER"
+          echo "WBVER=$WBVER" >> "$GITHUB_ENV"
+      # Install the exact pinned version as a prebuilt binary (GitHub
+      # Releases) - avoids compiling wasm-bindgen-cli from crates.io.
+      - name: Install wasm-bindgen-cli
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen-cli@${{ env.WBVER }}
+      - name: Install wasm-opt (binaryen)
+        run: sudo apt-get update && sudo apt-get install -y binaryen
+      - name: Build playground wasm
+        run: |
+          (cd deps/gossamer && cargo build --release --target wasm32-unknown-unknown -p gossamer-playground)
+          wasm-bindgen deps/gossamer/target/wasm32-unknown-unknown/release/gossamer_playground.wasm \
+            --out-dir site/playground --target web
+          wasm-opt -Oz \
+            --enable-bulk-memory --enable-nontrapping-float-to-int \
+            --enable-sign-ext --enable-mutable-globals \
+            --enable-multivalue --enable-reference-types \
+            -o site/playground/gossamer_playground_bg.wasm \
+            site/playground/gossamer_playground_bg.wasm
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy-retry.outputs.page_url }}
+    steps:
+      # The Pages backend can transiently reject an otherwise-valid publish
+      # ("Deployment failed, try again later."). The uploaded artifact and the
+      # deployment are idempotent, so re-attempt once before failing the job.
+      - id: deploy
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - id: deploy-retry
+        if: steps.deploy.outcome == 'failure'
+        uses: actions/deploy-pages@v5
