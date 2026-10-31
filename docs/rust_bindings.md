@@ -196,6 +196,22 @@ pub fn read_everything(path: String) -> Result<String, GosError> {
 }
 ```
 
+## Threads of your own
+
+A binding that runs a thread of its own, such as an event loop or a reader,
+hands the memory that thread freed back to the system when it is about to
+wait. `gossamer_binding::mark_thread_idle()` does that at most once per
+allocator purge window and answers how long until it should be called again,
+so the wait can be bounded by it:
+
+```rust
+let timeout = gossamer_binding::mark_thread_idle();
+let event = events.recv_timeout(timeout.unwrap_or(Duration::MAX));
+```
+
+`None` means nothing is pending; outside a Gossamer process it always answers
+`None`. It needs binding ABI 3.2 (Gossamer 0.75.9 or later).
+
 ## Opaque handles
 
 State that should live in Rust - a connection, a parser, a device -
@@ -462,7 +478,7 @@ building it supplies its own copy of that crate through Cargo's `[patch]`.
   and a removal goes through a deprecation period. A binding that builds
   against one release builds against the next.
 - **The binary interface is versioned.** A library records the binding ABI
-  it was built for (currently `3.0`); `gos` refuses one built for another
+  it was built for (currently `3.2`); `gos` refuses one built for another
   major version, and one whose signatures changed since they were cached,
   before any call.
 

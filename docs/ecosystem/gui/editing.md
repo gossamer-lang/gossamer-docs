@@ -98,7 +98,10 @@ every match.
 
 `FindBar` is the bar's model and view. The application folds bar messages
 through `FindBar::update`, which answers a `FindRequest` (search, next,
-previous, replace, replace all, close). Replace changes the selection only when
+previous, replace, replace all, close). Its toggles choose case, whole words
+and regular expressions, shown compactly as "Aa", "W" and ".*" with their full
+names as tooltips and accessible names, and `found(count, current)` shows how many
+matches there are and which is selected. Replace changes the selection only when
 it is exactly a match; otherwise it selects the next match first. The code
 editor replaces all matches in one `ReplaceText` edit, so one undo restores
 them, and gives focus back to the document when the bar closes.

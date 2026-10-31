@@ -15,8 +15,9 @@ release native; `tools/check-examples.sh NAME`). The Rust tests are in
 
 ## Terminal (`use gui::terminal`)
 
-`Terminal::open(Options)` creates VT screen state (the `alacritty_terminal`
-emulator) with bounded scrollback
+`Terminal::open(Options)` creates VT screen state (wezterm's terminal core,
+through the [wezterm-lite](https://github.com/gossamer-lang/wezterm-lite)
+fork) with bounded scrollback
 (2,000 rows by default, within a 64 MiB limit that holds the largest screen,
 256 x 512, so the screen always follows its view). `spawn(Command)` runs a program on a
 pseudo-terminal: a Unix PTY on Linux and macOS, ConPTY on Windows. Without a
@@ -29,12 +30,34 @@ visible cells.
 `UiMsg::Terminal(id, Event)` reports `Title`, `Bell`, `Exited(status)`
 (128 + the signal for a killed program), `Failed` when the program cannot be
 waited for, and `Refused` when a smaller byte limit keeps the screen from
-taking its view's size. The terminal example quits on `Exited` and shows the
+taking its view's size. Programs also reach the application through it:
+`Notify(title, body)` for desktop notifications (OSC 9 and 777),
+`Clipboard(text)` and `PrimarySelection(text)` for clipboard writes (OSC 52;
+the terminal never answers a clipboard read), and `PathActivated(path, line,
+column)` when the user Ctrl+clicks a `file:line:column` the screen shows. The terminal example quits on `Exited` and shows the
 program's title as its window title. Output is parsed on the
 UI thread while the session settles, so screen state is never shared between
 threads. At most 16 programs run at once. Each program's input and output
 queues are bounded (64 KiB in, 256 KiB out). Under sustained output the
 screen keeps the newest rows.
+
+`cwd()` answers the program's working directory, from OSC 7 when the shell
+reports it and from the foreground process otherwise. `zones()` answers the
+prompt, input and output regions a shell marks with OSC 133, which
+`scroll_to_row` and `reveal` move between. `find(query, options)` searches the
+whole buffer, history included, by text or regular expression, and
+`highlight(spans)` paints every match while `reveal` selects the current one.
+A program that turns on mouse reporting receives clicks, drags and the wheel
+in SGR form, focus changes when it asks for them, and synchronized output
+(DECSET 2026) shows its frames once each is complete. `view(..., scheme:)`
+sets the colors a view draws with: foreground, background, cursor, selection
+and the sixteen ANSI colors.
+
+Images arrive in all three protocols programs use: sixel, kitty graphics and
+iTerm2 inline files, as PNG, GIF, JPEG or WebP, animations included. Each
+image is drawn where the program placed it, below or above the text as it
+asks, and an animated one plays at its own frame times. The view tells
+programs the pixel size of its cells, as a terminal's window size does.
 
 When the view resizes, lines rewrap to the new width and rejoin when it
 widens again, history included, as in VTE. The widget fills the space it is
@@ -46,6 +69,32 @@ and a family that is not installed falls back to the bundled monospace face.
 The sixteen named colors follow the Tango palette on dark themes and a set
 made for light backgrounds otherwise, and any text below a 4.5:1 contrast
 against its background is darkened or lightened until it reads.
+
+### Efficiency
+
+A terminal holds what it shows and a bounded history, and gives the rest back:
+
+- **Images evict the oldest first.** A terminal's images share one 32 MiB
+  limit across sixel, kitty and iTerm2. A new image detaches the oldest
+  placements of other images until it fits, so a stream of pictures, such as
+  a file manager's previews or `chafa` over a folder, keeps the newest ones
+  instead of growing without bound; one larger than the whole limit is
+  refused. An image is freed as soon as no cell shows it, whether evicted,
+  overwritten or scrolled out of history, and the session's budget is charged
+  only for the images still shown. When the budget has no room left, the
+  terminal's limit shrinks to what it already holds, so further images replace
+  older ones instead of adding to them.
+- **Pixels are decoded once and shared.** Every image is decoded as it
+  arrives, an animation keeping at most 100 MB of frames, and the renderer
+  draws from the same pixels the terminal core holds rather than a copy.
+- **Animations repaint at their frame times only**: the session sleeps until
+  the next frame is due rather than drawing every display refresh.
+- **Program output is bounded.** One image string may be at most 16 MiB and
+  any other control string 4 KiB (a clipboard write 1 MiB); a longer one is
+  dropped whole. Each program's input and output queues are bounded, and
+  history keeps its configured number of rows.
+- **Text layouts are cached per screen**, sized to the rows it shows, so
+  output that scrolls past does not fill the toolkit's shared caches.
 
 Limits: macOS PTYs and Windows ConPTY compile and pass Clippy for those
 targets but have not yet run on those systems.

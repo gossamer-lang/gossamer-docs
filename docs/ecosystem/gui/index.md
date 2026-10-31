@@ -52,7 +52,7 @@ export, charts, a scene canvas, an image viewer and a media player.
 
 Then run `gos fetch`, which also fetches gui-engine-gos and windowing-gos at
 their releases. A program that imports `windowing` itself declares it too,
-at the tag gui-gos uses. You need Gossamer 0.75.6 or newer and a Rust
+at the tag gui-gos uses. You need Gossamer 0.75.9 or newer and a Rust
 toolchain; `tools/check-toolchain.sh` checks the compiler. The first build
 compiles the Rust core and SDL; later builds reuse them.
 

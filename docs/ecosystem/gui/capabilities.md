@@ -6,7 +6,7 @@ windowing-gos.
 
 | Area | Implemented behavior | Current limits |
 |---|---|---|
-| Requirements | Gossamer 0.75.6+, Rust, CMake and a C compiler; windowing-gos and gui-engine-gos come in at their v0.1.0 releases | Source builds need the compatible Gossamer binding SDK; see the READMEs |
+| Requirements | Gossamer 0.75.9+, Rust, CMake and a C compiler; windowing-gos and gui-engine-gos come in at their v0.1.0 releases | Source builds need the compatible Gossamer binding SDK; see the READMEs |
 | Runtime | Multiple windows, retained state, focus, timers, bounded mailbox and built-in desktop jobs, close review | Built-in storage and providers share byte admission, cancellation and disposal rules. Opaque application models remain application-owned. See [resources](resources.md) |
 | Rendering | Rust software paths, clipping, gradients, image and font rasterization | See [rendering](rendering.md) for retained scenes, budgets and GPU backend validation |
 | Text | Grapheme editing, bidi, Arabic and supported Indic shaping, installed-font fallback, CBDT emoji, variable TrueType and checked offset conversions | Persistent native documents, incremental indexes, viewport geometry and checkpoint restoration are implemented. CFF2, COLR and sbix coverage and real OS IME journeys remain separate work |

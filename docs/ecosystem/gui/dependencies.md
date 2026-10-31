@@ -8,7 +8,7 @@ outside Gossamer, and why.
 
 | Dependency | Purpose | Boundary | License | Platforms | Build/runtime requirement |
 |---|---|---|---|---|---|
-| Gossamer runtime and standard library | Language, collections, text, errors | The wrapper builds on the language and the two bindings only | Apache 2.0 / MIT | Linux, Windows, macOS | Gossamer `^v0.75.6` |
+| Gossamer runtime and standard library | Language, collections, text, errors | The wrapper builds on the language and the two bindings only | Apache 2.0 / MIT | Linux, Windows, macOS | Gossamer `^v0.75.9` |
 | [gui-engine-gos](../gui-engine/index.md) | Widgets, layout, retained state, text shaping and layout, software painting, themes, dialogs, localization, Linux AT-SPI, the application loop | Rust crate `gui-engine` behind the `gui_engine_host` binding module; widget trees, messages and queries cross as JSON | Apache 2.0 | Linux X11/Wayland, Windows, macOS | A Rust toolchain to build the binding |
 | [windowing-gos](../windowing/index.md) | Native windows, input, event pump, software framebuffers, IME, clipboard, dialogs, displays | Rust crate `gos-windowing`, used by the toolkit directly and by gui-gos through `use windowing`; no SDL call leaves it | Apache 2.0 | Linux X11/Wayland, Windows, macOS | SDL 3, vendored through windowing-gos's build |
 | [zbus](https://github.com/dbus2/zbus) | Linux AT-SPI, notifications, single instance | Rust crate inside gui-engine-gos and windowing-gos; nothing in gui-gos speaks D-Bus | MIT | Linux | Session and accessibility buses at runtime; no libdbus |
@@ -18,10 +18,13 @@ outside Gossamer, and why.
 
 The Rust crates the toolkit core builds with (serde, serde_json, png,
 zune-jpeg, gif, miniz_oxide, roxmltree, jiff, parking_lot, thiserror,
-scopeguard, unicase, pulldown-cmark, ropey, alacritty_terminal, portable-pty,
+scopeguard, unicase, pulldown-cmark, ropey, wezterm-term, portable-pty,
 libloading and the unicode-* crates) are listed in its `Cargo.toml`. Each is
 available under MIT or Apache 2.0, except libloading, which is ISC.
-alacritty_terminal, the terminal's emulator, is Apache 2.0; its own
+wezterm-term, the terminal's emulator, comes from
+[wezterm-lite](https://github.com/gossamer-lang/wezterm-lite), a fork of
+WezTerm's terminal core under its MIT license; its image decoding uses the
+`image` crate's PNG, GIF, JPEG and WebP decoders only, and its own
 dependencies are MIT, Apache 2.0, Unlicense or Zlib.
 
 SDL is not a widget toolkit: it supplies window surfaces and input events
@@ -47,7 +50,7 @@ Update owner: the gui-gos maintainers (this repository).
 
 ## Current minimums and distribution assets
 
-The library manifest requires Gossamer `^v0.75.6`, and the example and test
+The library manifest requires Gossamer `^v0.75.9`, and the example and test
 projects state the same floor. windowing-gos and gui-engine-gos are
 dependencies at their `v0.1.0` tags, which `gos fetch` (or `tools/fetch.sh`
 for every project here) prepares.

@@ -107,4 +107,4 @@ toolchain builds or what the toolkit loads only when a feature is used.
 The three packages are released together. `gui-gos` depends on
 `windowing-gos` and `gui-engine-gos` at their `v0.1.0` tags, `gui-engine-gos`
 depends on `windowing-gos` at `v0.1.0`, and all three require Gossamer
-`^v0.75.6`. `gos fetch` prepares the tagged dependencies.
+`^v0.75.9`. `gos fetch` prepares the tagged dependencies.

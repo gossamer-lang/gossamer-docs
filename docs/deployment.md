@@ -217,6 +217,14 @@ affected by allocator retention, fixed stack reservations, uncollectable
 cycles, JIT code, and caches, so size container limits from measured service
 peaks rather than assuming RSS immediately follows the live object graph.
 
+Freed memory stays committed for a purge window, one second by default, so a
+burst that frees and allocates again reuses it without page faults. A
+scheduler worker that parks and an HTTP server waiting for a connection hand
+their freed pages back to the system once per window, so a quiet program
+shrinks to what it holds. `GOS_ALLOC_PURGE_DELAY` sets the window in
+milliseconds; `0` returns memory the moment it is freed, at the cost of more
+page faults under churn.
+
 ## Health check / readiness
 
 A typical HTTP service exposes `/healthz`:
