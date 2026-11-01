@@ -106,9 +106,14 @@ fn main() {
 ## Const parameters on structs and enums
 
 A struct, a tuple struct, or an enum may declare const parameters, and a field
-or variant payload may name one as an array length. Methods in
-`impl<const N: usize> Ring<N>` read `N` as a value, whether the call is written
-`r.capacity()` or `Ring::capacity(r)`:
+or variant payload may name one as an array length. Each instantiation of a
+struct is laid out with its own length, so `Ring<3>`'s array is stored inline
+in the struct - and inside a `Vec<Ring<3>>`'s buffer - with no allocation of its
+own, and every method that names the type is specialised for the value.
+Methods in `impl<const N: usize> Ring<N>` read `N` as a value, whether the call
+is written `r.capacity()` or `Ring::capacity(r)`; a method receives `N` only
+when its body names it, so operator impls (`Index`, `PartialEq`) and `Display`
+work on these types like on any other:
 
 ```gossamer
 struct Ring<const N: usize> {
@@ -145,7 +150,8 @@ fn main() {
 A method may also answer an array of the block's length
 (`fn snapshot(&self) -> [i64; N]`), and the caller receives a fixed `[i64; k]`
 for its receiver's `k`. An associated function with no receiver takes the
-block's const parameters from the turbofish on the type it is called through:
+block's const parameters from the turbofish on the type it is called through,
+or from the instantiation the context expects (`let r: Ring<3> = Ring::new()`):
 
 ```gossamer
 struct Ring<const N: usize> {
