@@ -12,6 +12,7 @@ Process environment, command-line arguments, working directory.
 | `set_var` | `fn set_var(name: String, value: String) -> ()` | Sets an environment variable in the current process. |
 | `unset_var` | `fn unset_var(name: String) -> ()` | Removes an environment variable from the current process. |
 | `current_dir` | `fn current_dir() -> Result<String, io::Error>` | Returns the current working directory. |
+| `current_exe` | `fn current_exe() -> Result<String, io::Error>` | Returns the path of the running program's executable. |
 | `set_current_dir` | `fn set_current_dir(path: String) -> Result<(), io::Error>` | Changes the current working directory. |
 | `home_dir` | `fn home_dir() -> Option<String>` | Returns the calling user's home directory if known. |
 | `temp_dir` | `fn temp_dir() -> String` | Returns the system's temporary directory. |

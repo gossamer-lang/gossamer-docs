@@ -3574,6 +3574,25 @@
       "reference_status": "catalog_only"
     },
     {
+      "id": "std-env-current-exe",
+      "name": "std::env::current_exe",
+      "kind": "function",
+      "signature": "fn current_exe() -> Result<String, io::Error>",
+      "description": "Returns the path of the running program's executable.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdenv",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
       "id": "std-env-home-dir",
       "name": "std::env::home_dir",
       "kind": "function",
