@@ -10,8 +10,8 @@ other module.
 
 C functions need no crate: declare them in an `unsafe extern "C"` block
 ([Foreign functions](language/unsafe_extern.md)); a project refuses them
-with `ffi = false`. A `[rust-bindings]` entry is its own opt-in and the
-`ffi` key does not affect it.
+with `ffi = false`, which refuses `[rust-bindings]` entries too (see
+[Shipping a library that carries a binding](#shipping-a-library-that-carries-a-binding)).
 
 ## Quick start
 
