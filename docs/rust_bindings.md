@@ -96,6 +96,13 @@ binding with the same features shares that build, and a `path` binding is
 rebuilt when its sources change. Later runs start in a few milliseconds, and
 the library loads only when the program first calls one of its items.
 
+`gos build` rebuilds the bindings and relinks the program when anything Cargo
+built them from changes: the Rust compiler, `RUSTFLAGS`, the Cargo
+configuration the bindings directory sees (a `.cargo/config.toml` above it or
+in `CARGO_HOME`, or a `CARGO_BUILD_`, `CARGO_PROFILE_` or `CARGO_TARGET_`
+variable), or any local file Cargo read, such as a crate a `[patch]` points
+at.
+
 ## Declaring the module
 
 `#[gos_module("path")]` on a `mod { ... }` publishes every `pub fn`

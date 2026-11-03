@@ -50,9 +50,9 @@ Update owner: the gui-gos maintainers (this repository).
 
 ## Current minimums and distribution assets
 
-The library manifest requires Gossamer `^v0.75.9`, and the example and test
+The library manifest requires Gossamer `^v0.75.17`, and the example and test
 projects state the same floor. windowing-gos and gui-engine-gos are
-dependencies at their `v0.1.0` tags, which `gos fetch` (or `tools/fetch.sh`
+dependencies at their `v0.1.3` and `v0.1.5` tags, which `gos fetch` (or `tools/fetch.sh`
 for every project here) prepares.
 
 The embedded fonts are DejaVu Sans and DejaVu Sans Mono 2.37, regular and

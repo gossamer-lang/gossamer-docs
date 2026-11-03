@@ -112,6 +112,7 @@ version. This page is auto-generated from the catalogue in
 | [`GT0045`](#gt0045) | Types | question mark not supported here |
 | [`GT0121`](#gt0121) | Types | `&mut` passed where a value is taken |
 | [`GT0122`](#gt0122) | Types | a binding answers an undeclared struct |
+| [`GT0123`](#gt0123) | Types | ordering a value that has no order |
 
 ## `GP0001` <a id="gp0001"></a>
 
@@ -712,4 +713,10 @@ A parameter that is not `&mut` holds a value of its own, and a `mut` parameter w
 **Types** - a binding answers an undeclared struct
 
 A `[rust-bindings]` item answers a `#[derive(GosStruct)]` struct, which crosses field by field into the program's struct of the same name. Declare that struct with the Rust struct's fields, in the same order and with the same types.
+
+## `GT0123` <a id="gt0123"></a>
+
+**Types** - ordering a value that has no order
+
+An ordering comparison (`<`, `<=`, `>`, `>=`) or an ordering method (`sort`, `binary_search`, `min`, `max`) named a value whose type has no order: a `Map`, a hash `Set`, a `json::Value`, or a sequence, tuple, or `Option` / `Result` holding one. Compare with `==` / `!=`, or order by a key the language orders (`sort_by_key`).
 
