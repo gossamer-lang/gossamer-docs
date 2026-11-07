@@ -62,6 +62,8 @@ for the host:
 ```sh
 sudo apt-get install -y llvm clang        # Debian, Ubuntu (18 or newer)
 brew install llvm@22                      # macOS
+sudo port install llvm-22                 # macOS, MacPorts
+pkg install llvm22                        # FreeBSD
 pacman -S mingw-w64-x86_64-llvm           # Windows, from MSYS2
 ```
 
@@ -86,8 +88,8 @@ implementation, so the supported platform matrix is narrower than
 The precise target contract is maintained in the executable
 [supported-target matrix](supported_targets.md). Tier 1 executes the pure
 bytecode VM, JIT-enabled VM, and LLVM AOT binaries on native CI for Linux
-x86_64/aarch64, Apple Silicon macOS, and Windows x86_64. Linux
-x86_64/aarch64-musl AOT output is Tier 2: it is executed natively or under
+x86_64/aarch64, Apple Silicon macOS, Windows x86_64, and FreeBSD x86_64.
+Linux x86_64/aarch64-musl AOT output is Tier 2: it is executed natively or under
 QEMU and compared with the pure bytecode VM. Intel macOS is artifact-only;
 armv7, riscv64, and wasm are not supported execution targets.
 

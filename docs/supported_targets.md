@@ -17,6 +17,7 @@ fixtures on native CI. They are the supported execution contract.
 | `aarch64-unknown-linux-gnu` | `ubuntu-24.04-arm` |
 | `aarch64-apple-darwin` | `xcode-27` (macOS 27) |
 | `x86_64-pc-windows-msvc` | `windows-latest` |
+| `x86_64-unknown-freebsd` | FreeBSD VM on `ubuntu-latest` |
 
 ## Tier 2
 
@@ -51,23 +52,27 @@ or standard-library surface to Stable.
 
 ## macOS deployment target
 
-Release artifacts, the embedded runtime, user Rust bindings, and executables
-produced by `gos build` use `MACOSX_DEPLOYMENT_TARGET=15.0`. macOS 15 is the
-supported deployment baseline, and the native build regression checks it on
-the macOS 27 `xcode-27` GitHub Actions runner.
+Releases ship two macOS toolchains for each architecture. The default
+`gos-VERSION-macos-ARCH.zip` runs on macOS 15 and later; the
+`gos-VERSION-macos12-ARCH.zip` archive runs on macOS 12 and later.
+`scripts/install.sh` picks the macOS 12 archive on macOS 12 to 14.
 
-Building the complete toolchain from source for macOS 11 through 14 is allowed
-as an unsupported, best-effort configuration. Export one target for both the
-toolchain build and every later `gos build` invocation so the runtime archive,
-Rust bindings, and final executable agree:
+A toolchain targets, by default, the macOS it was built for: its embedded
+runtime, the Rust bindings it builds, and the executables it produces use that
+`MACOSX_DEPLOYMENT_TARGET`, so programs built with the macOS 12 toolchain run on
+macOS 12. Each release archive is compiled for the oldest CPU its macOS runs
+on: `x86-64-v3` (AVX2) on Intel for macOS 15, `x86-64-v2` on Intel for macOS
+12, which still runs on the 2013 Mac Pro, and `apple-m1` on Apple Silicon. CI
+builds and tests on the current macOS runner (`xcode-27`), and every release
+archive is checked to ask for no macOS newer than its own.
 
-```sh
-export MACOSX_DEPLOYMENT_TARGET=11.0
-cargo build --release -p gossamer-cli
-./target/release/gos build --release path/to/main.gos
-```
+`MACOSX_DEPLOYMENT_TARGET` overrides the target per build; export one value
+for both a toolchain build and every later `gos build` so the runtime archive,
+Rust bindings, and final executable agree. A portable Intel build
+(`--reproducible` or `--target`) for a macOS older than 13 uses the `x86-64-v2`
+CPU baseline; for 13 and later it uses `x86-64-v3`.
 
-Replace `11.0` with the desired deployment target from `11.0` through `14.x`.
-These older targets do not run in Gossamer CI and are not supported release
-configurations. Building requires an installed Xcode or Command Line Tools SDK
+Building the toolchain from source on macOS 11 is a best-effort configuration:
+with `MACOSX_DEPLOYMENT_TARGET` unset, it targets the macOS it runs on.
+Building requires an installed Xcode or Command Line Tools SDK
 that can target the selected macOS version.
