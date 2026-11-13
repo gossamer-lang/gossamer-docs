@@ -477,6 +477,12 @@ boundary crossing, so the same program prints the same thing on every tier.
 
 A binding crate depends on `gossamer-binding` by version, and the toolchain
 building it supplies its own copy of that crate through Cargo's `[patch]`.
+`gos` carries the sources of the binding crates and the runtime it was built
+from, and every binding build compiles those, whatever Gossamer checkout or
+other toolchain is on the machine. A binding crate that names
+`gossamer-binding` (or `gossamer-binding-abi`, `gossamer-binding-macros`,
+`gossamer-runtime`) by path or git is refused, since Cargo cannot put the
+toolchain's copy in place of a source the crate names directly.
 
 - **The Rust source API is the contract.** `#[gos_module]`, `#[gos_opaque]`,
   `#[gos_blocking]`, `#[derive(GosStruct)]`, the `BindingAbi` trait, and the

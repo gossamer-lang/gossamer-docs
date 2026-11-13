@@ -63,8 +63,8 @@ Windows/macOS CI runs the same Rust `instance-check` example on their own driver
 
 The binding crate needs the Gossamer binding SDK, which is not published on
 crates.io. Programs get it from `gos`; standalone Cargo checks take the one
-`gos env` reports as `binding_sdk`, a Gossamer checkout's
-`crates/gossamer-binding` or a release tag:
+`gos env` reports as `binding_sdk`, the copy of `crates/gossamer-binding`
+that `gos` carries, unpacked into its cache:
 `--config 'patch.crates-io.gossamer-binding.path="/path/to/gossamer/crates/gossamer-binding"'`.
 
 ## Resource budgets

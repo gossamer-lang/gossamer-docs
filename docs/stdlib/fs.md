@@ -6,13 +6,13 @@ Filesystem reading, writing, and traversal (Rust std::fs shape).
 
 | Item | Signature | Description |
 |---|---|---|
-| `File` | `type File` | Streaming file handle. Reads and writes at the handle's own cursor (read, read_to_string, write, write_bytes, seek), positionally (read_at, read_at_into, write_at), and reports size (len, set_len). Durability is sync_all / sync_data; multi-process safety is the try_lock_* / unlock family. The file closes at `close()` or with its last handle. `std::term` and `os::fd` calls take the file itself, which keeps it open while they use it; `fd()` answers the OS descriptor (a handle on Windows) for a foreign call. |
+| `File` | `type File` | Streaming file handle. Reads and writes at the handle's own cursor (read, read_to_string, write, write_bytes, seek), positionally (read_at, read_at_into, write_at), and reports size (len, set_len). Durability is sync_all / sync_data; multi-process safety is the try_lock_* / unlock family. The file closes at `close()` or with its last handle. `std::term` and `os::fd` calls take the file itself, which keeps it open while they use it; `fd()` answers the OS descriptor (a handle on Windows) for a foreign call, and `File::from_raw(raw)` takes ownership of one a foreign call answered, as Go's `os.NewFile` does. |
 | `DirInfo` | `type DirInfo` | Directory entry yielded by read_dir and walk_dir; carries path, name, is_file, is_dir, is_symlink, size, and modified_ms (milliseconds since the Unix epoch). |
 | `Metadata` | `type Metadata` | What `metadata(path)` answers about a file: size, is_file, is_dir, is_symlink, readonly, and modified_unix_ms (milliseconds since the Unix epoch). |
 | `OpenOptions` | `type OpenOptions` | Builder for opening files with read/write/append/create/truncate flags. |
 | `open` | `fn open(path: String) -> Result<fs::File, io::Error>` | Opens a file for streaming reads. |
 | `create` | `fn create(path: String) -> Result<fs::File, io::Error>` | Creates or truncates a file and returns a streaming file handle. |
-| `temp_dir` | `fn temp_dir(prefix: String) -> Result<String, io::Error>` | Creates a unique temporary directory; the caller removes it explicitly. |
+| `temp_dir` | `fn temp_dir(prefix: String, parent: Option<String> = None) -> Result<String, io::Error>` | `temp_dir(prefix, parent: Option<String> = None) -> Result<String, io::Error>`: creates a fresh folder and answers its path; the caller removes it. Without `parent` it lands in the system temporary root as `gossamer-prefix-...`; with one it is made inside that folder as `prefix-...`, as Go's `os.MkdirTemp(dir, pattern)` does, so it can be renamed within that filesystem. `prefix` must be a single path component. |
 | `temp_file` | `fn temp_file(prefix: String) -> Result<(fs::File, String), io::Error>` | Creates a unique temporary file and returns its handle plus path. |
 | `read` | `fn read(path: String) -> Result<Vec<u8>, io::Error>` | Reads an entire file into memory as bytes. |
 | `read_to_string` | `fn read_to_string(path: String) -> Result<String, io::Error>` | Reads an entire file into memory as UTF-8 text. |

@@ -5098,7 +5098,7 @@
       "name": "std::fs::File",
       "kind": "type",
       "signature": null,
-      "description": "Streaming file handle. Reads and writes at the handle's own cursor (read, read_to_string, write, write_bytes, seek), positionally (read_at, read_at_into, write_at), and reports size (len, set_len). Durability is sync_all / sync_data; multi-process safety is the try_lock_* / unlock family. The file closes at `close()` or with its last handle. `std::term` and `os::fd` calls take the file itself, which keeps it open while they use it; `fd()` answers the OS descriptor (a handle on Windows) for a foreign call.",
+      "description": "Streaming file handle. Reads and writes at the handle's own cursor (read, read_to_string, write, write_bytes, seek), positionally (read_at, read_at_into, write_at), and reports size (len, set_len). Durability is sync_all / sync_data; multi-process safety is the try_lock_* / unlock family. The file closes at `close()` or with its last handle. `std::term` and `os::fd` calls take the file itself, which keeps it open while they use it; `fd()` answers the OS descriptor (a handle on Windows) for a foreign call, and `File::from_raw(raw)` takes ownership of one a foreign call answered, as Go's `os.NewFile` does.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -5667,8 +5667,8 @@
       "id": "std-fs-temp-dir",
       "name": "std::fs::temp_dir",
       "kind": "function",
-      "signature": "fn temp_dir(prefix: String) -> Result<String, io::Error>",
-      "description": "Creates a unique temporary directory; the caller removes it explicitly.",
+      "signature": "fn temp_dir(prefix: String, parent: Option<String> = None) -> Result<String, io::Error>",
+      "description": "`temp_dir(prefix, parent: Option<String> = None) -> Result<String, io::Error>`: creates a fresh folder and answers its path; the caller removes it. Without `parent` it lands in the system temporary root as `gossamer-prefix-...`; with one it is made inside that folder as `prefix-...`, as Go's `os.MkdirTemp(dir, pattern)` does, so it can be renamed within that filesystem. `prefix` must be a single path component.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -13606,11 +13606,30 @@
       "reference_status": "catalog_only"
     },
     {
+      "id": "std-os-fd-Borrowed",
+      "name": "std::os::fd::Borrowed",
+      "kind": "type",
+      "signature": null,
+      "description": "A descriptor (a handle on Windows) foreign code keeps open and lends: `fd::Borrowed::from_raw(raw)` wraps the integer a foreign call answered, such as an X connection's `XConnectionNumber`, and `raw()` answers it back. Nothing closes it; its owner must keep it open while calls use it. A descriptor the program takes over is `fs::File::from_raw(raw)` instead, which closes it with the file.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdosfd",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
       "id": "std-os-fd-Descriptor",
       "name": "std::os::fd::Descriptor",
       "kind": "trait",
       "signature": null,
-      "description": "What a call that needs an OS descriptor takes: an `fs::File`, which stays open while the call uses it, or `term::STDIN`, `term::STDOUT`, or `term::STDERR` for a standard stream. Any other integer is refused, since a descriptor read off a file names whatever the OS reuses it for once the file closes (GT0119).",
+      "description": "What a call that needs an OS descriptor takes: an `fs::File`, which stays open while the call uses it, `term::STDIN`, `term::STDOUT`, or `term::STDERR` for a standard stream, or an `fd::Borrowed` lent by foreign code. Any other integer is refused, since a descriptor read off a file names whatever the OS reuses it for once the file closes (GT0119).",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -13629,7 +13648,7 @@
       "name": "std::os::fd::wait_readable",
       "kind": "function",
       "signature": "fn wait_readable<D: os::fd::Descriptor>(fd: D, timeout_ms: i64) -> Result<bool, errors::Error>",
-      "description": "`wait_readable(fd, timeout_ms) -> Result<bool, errors::Error>`: true when `fd` has input (or reached end of input) within `timeout_ms` milliseconds; a negative timeout waits indefinitely. False at the timeout or when the goroutine's cohort is cancelled. The goroutine parks; other goroutines keep running.",
+      "description": "`wait_readable(fd, timeout_ms) -> Result<bool, errors::Error>`: true when `fd` has input (or reached end of input) within `timeout_ms` milliseconds; a negative timeout waits indefinitely. False at the timeout or when the goroutine's cohort is cancelled. The goroutine parks (on Unix in its worker's event queue, so it resumes as promptly as a thread blocked in `poll`); other goroutines keep running.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -14637,6 +14656,25 @@
       "kind": "function",
       "signature": "fn kill_group(pid: i64) -> bool",
       "description": "Sends a signal to a process group (POSIX).",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdprocess",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-process-look-path",
+      "name": "std::process::look_path",
+      "kind": "function",
+      "signature": "fn look_path(name: String) -> Option<String>",
+      "description": "`look_path(name) -> Option<String>`: the file a program name resolves to, as Go's `exec.LookPath` and Python's `shutil.which` answer it. A name holding a path separator is checked as written; any other is searched for in each `PATH` directory in order, skipping empty entries. Unix requires a file this process may execute; Windows tries each `PATHEXT` extension (`.COM;.EXE;.BAT;.CMD` when unset), after the name as written when it has an extension. `None` when nothing matches.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
