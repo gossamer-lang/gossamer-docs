@@ -33,6 +33,17 @@ fn main() {
 }
 ```
 
+The printers are the exception among the compiler-known calls: `print`,
+`println`, `eprint`, and `eprintln` named as a callback render the one
+value they are handed, as `|v| println(v)` does:
+
+```gossamer
+fn main() {
+    #["a", "b"].for_each(println)
+    let _ = Some(2.5).map(println)
+}
+```
+
 ## Everything else is a written closure
 
 There is no projection shorthand. A method call, a field read, an index,

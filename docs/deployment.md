@@ -178,8 +178,11 @@ For shipping to a log aggregator that doesn't read the journal:
 
 ### GOMAXPROCS-equivalent
 
-Gossamer reads the OS CPU count at startup and runs that many
-scheduler threads. Override with `GOSSAMER_MAX_PROCS`:
+Gossamer reads the OS CPU count at startup and runs up to that many
+scheduler threads, starting them as goroutines call for them, as Go
+does: an idle service runs a handful of threads, and one with work for
+every core runs a thread per core. Override the bound with
+`GOSSAMER_MAX_PROCS`:
 
 ```sh
 GOSSAMER_MAX_PROCS=4 ./myservice
@@ -200,8 +203,9 @@ GOSSAMER_GOROUTINE_STACK=2097152 ./myservice  # 2 MiB stacks
 ```
 
 Idle goroutines are parked on the netpoller and consume constant
-memory. The worker-thread count (not the goroutine count) follows
-`GOSSAMER_MAX_PROCS`.
+memory, and an idle program's threads sleep until a wake or their next
+timer, so it uses no CPU. The worker-thread count (not the goroutine
+count) is bounded by `GOSSAMER_MAX_PROCS`.
 
 ### Memory
 

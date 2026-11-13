@@ -244,7 +244,9 @@ calls it, so `#[1.0, -2.0].map(math::abs)` means
 `map(|v| math::abs(v))`. A std item with no fixed parameter list has no
 such closure and reports `GT0015`; a macro is not a function at all, so
 `fmt::format` reports `GR0018` and is written `format(..)` inside a
-closure of your own.
+closure of your own. The printers `print`, `println`, `eprint`, and
+`eprintln` are the exception: named as a callback, as in
+`xs.for_each(println)`, each renders the value it is handed.
 
 Everything else is a written closure - a method call, a field read, an
 index, and a tuple projection each spell out what they do:
@@ -603,7 +605,9 @@ unresolved-name error. Prelude types, variants, macros, and functions listed
 on the [Prelude page](prelude.md) remain available without imports.
 
 A project's module tree is file-based: `src/foo.gos` becomes
-`mod foo`, `src/bar/mod.gos` becomes `mod bar`, nesting to any depth.
+`mod foo`, `src/bar/mod.gos` becomes `mod bar`, and every other file in
+`src/bar/` is a module nested in it (`src/bar/baz.gos` is `bar::baz`),
+nesting to any depth. A directory without a `mod.gos` is not a module.
 Local modules import exactly like the standard library - `use foo::item`,
 or spell `foo::item` in full. A bare name that some module declares but
 which is not in scope reports `GR0011` with the `use` line that fixes it.

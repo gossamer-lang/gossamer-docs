@@ -13,9 +13,11 @@ A **package** is the unit of distribution: one `project.toml`, one
 project id, one thing `gos add` pulls in. The library or application
 you are developing is a package. Its dependencies are other packages.
 
-A **module** is a directory of source under `src/`. `src/util/mod.gos`
-declares module `util`. A single file directly under `src/` -
-`src/util.gos` - declares the same module.
+A **module** is a directory of source under `src/` that holds a
+`mod.gos`: `src/util/mod.gos` declares module `util`, and each other file
+in `src/util/` a module nested in it. A single file directly under
+`src/` - `src/util.gos` - declares the same module. A directory without
+a `mod.gos` is not a module.
 
 A **module descendant** is a module nested inside another. `src/deep/`
 declares `deep`; `src/deep/nest/` declares `deep::nest`, a descendant

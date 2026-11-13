@@ -95,9 +95,13 @@ differential.
 `gossamer-runtime::sched` is the work-stealing M:N scheduler.
 Every Gossamer binary links it through `libgossamer_runtime.a`, so
 `spawn(|| expr)` in compiled code (and the bytecode VM) lands on the same
-shared pool. The pool size defaults to `num_cpus()`, overridable
+shared pool. Workers start as goroutines call for them: one at start,
+and another when a goroutine is placed while every started worker
+already has one. The pool's bound defaults to `num_cpus()`, overridable
 via `GOSSAMER_MAX_PROCS=N` or `runtime::set_max_procs(n)` from
-user code.
+user code. A parked worker sleeps until a wake or its next timer, and
+the watchdog that preempts long-running goroutines sleeps while no
+worker runs one, so an idle program makes no system calls.
 
 Deferred JIT promotion reports compile time, emitted native-code bytes, and
 process RSS through VM diagnostics. Set `GOS_JIT_MAX_CODE_BYTES=N` to reject a
@@ -227,12 +231,14 @@ terminal calls, and third-party binding code still require effect-ledger audit.
 ## Netpoller
 
 `gossamer-runtime::sched::poller::OsPoller` wraps `mio` (epoll on
-Linux, kqueue on macOS / BSD, IOCP on Windows). One dedicated
-`gos-netpoller` OS thread blocks on `OsPoller::poll(50 ms)` and
-dispatches each readiness event to the goroutine that registered
-for it via `register_waker(gid, closure)`. Default closure: just
-`scheduler().unpark(gid)`. Timers (`time::sleep`,
-`http::Client::do_request` deadlines) ride the same wheel.
+Linux, kqueue on macOS / BSD, IOCP on Windows). Each scheduler
+worker has a poller of its own: a worker with nothing to run blocks in
+it until a descriptor is ready or its earliest timer is due, and the
+goroutines that become runnable resume on that worker. Threads outside
+the scheduler share one more poller, driven by a `gos-netpoller` thread
+started the first time it is needed. Timers (`time::sleep`,
+`time::after`, I/O deadlines) live in the same pollers. Every
+`os::signal::on` subscription is relayed by one `gos-sig` thread.
 
 ## HTTP server
 
