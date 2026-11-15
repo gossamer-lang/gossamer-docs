@@ -625,6 +625,10 @@ for the rare standalone case with no contextual hint.
 - `1.0` - plain float, inferred type. Defaults to `f64`.
 - `1.0f32` - explicit float width.
 
+An integer literal only takes an integer type and a float literal a float
+type, so `#[1, 2.5]` and `if c { 1 } else { 2.5 }` are GT0001 mismatches;
+write `1.0` where a float is meant.
+
 ## String literals
 
 - `"hello"` - ordinary double-quoted string. Spans multiple lines

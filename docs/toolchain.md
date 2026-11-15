@@ -139,33 +139,35 @@ readable in narrow terminals.
 |---------|---------|
 | `gos lsp` | Start a language-server-protocol adapter on stdio. |
 
-`gos lsp` is intended for editors, not humans. Shipped
-capabilities:
+`gos lsp` is intended for editors, not humans. It analyses the whole
+package a file belongs to, so every answer sees the other files of the
+project, open or not:
 
-- `textDocument/publishDiagnostics` on `didOpen` / `didChange` -
-  every open document runs through parse + resolve + typecheck and
-  diagnostics are published inline.
-- `textDocument/hover` - renders a small markdown card with the
-  identifier under the cursor and its interned type when the
-  type checker can resolve it.
-- `textDocument/definition` - jumps to the declaring item for
-  identifiers that resolve to a top-level `fn` / `struct` / `enum`
-  / `trait` / `type` / `const` / `static` / `mod`.
-- `textDocument/completion` - completion provider for top-level
-  items and keywords in scope.
-- `textDocument/references` - every whole-word occurrence of the
-  symbol under the cursor, in the same document. Matched
-  syntactically; shadowed locals are reported alongside the real
-  references until the semantic use-to-def map lands.
-- `textDocument/prepareRename` + `textDocument/rename` - returns
-  a `WorkspaceEdit` that renames every occurrence of the symbol
-  in the file. Rejects non-identifier `newName` inputs.
-- `textDocument/inlayHint` - emits a `: <type>` ghost-text hint
-  after every `let` binding and closure parameter whose type the
-  user did not spell out. Same shape rust-analyzer uses for Rust.
+- Diagnostics - every document runs through parse, resolve, typecheck,
+  and lints, and is published on open and on every edit, with the same
+  findings `gos check` reports.
+- `hover`, `signatureHelp` - the type and doc comment of what is under the
+  cursor, and the parameters of the call being written.
+- `definition`, `typeDefinition` - the declaration of a local, an item, or
+  a value's type, in whichever file of the package declares it.
+- `references`, `documentHighlight`, `prepareRename` / `rename` - semantic
+  occurrences across the workspace; a rename answers one `WorkspaceEdit`
+  over every file it touches.
+- `completion` - keywords, items in scope, `module::item` paths, and the
+  methods and fields a receiver's type answers after `.`.
+- `documentSymbol`, `workspace/symbol`, `foldingRange` - the outline, a
+  workspace-wide symbol search, and folds.
+- `inlayHint`, `semanticTokens/full` - inferred types of `let` bindings and
+  closure parameters, and semantic highlighting.
+- `formatting` and `codeAction` - `gos fmt` as a document edit, quick fixes
+  for the suggestions diagnostics carry, and `source.fixAll.gossamer`.
 
-Editors should launch `gos lsp` over stdio and speak LSP 3.16 with
-`textDocumentSync=Full` (incremental edits land in a follow-up).
+At `initialize` the server indexes every `.gos` file under the workspace
+folders. Files the editor has not opened are read from disk; when the
+client supports dynamic registration the server asks it to watch `*.gos`
+and `project.toml` files, so changes made outside the editor (a
+`git checkout`, a code generator) reach the analysis. Text sync is
+incremental, and positions are UTF-16 columns as LSP 3.16 specifies.
 
 ### Pre-built editor integrations
 
@@ -193,8 +195,10 @@ directly:
 - `lint` - the lint suite, with `fix` and `deny_warnings`.
 - `explain` - long-form rationale for a diagnostic code.
 - `execute` / `build` / `test` - execute programs and test suites;
-  exit code, stdout, and stderr come back, bounded by a
-  per-call `timeout_ms`.
+  exit code, stdout, and stderr come back, bounded by a per-call
+  `timeout_ms` that ends the whole process tree the call started.
+  `execute` with `native: true` runs the native executable `gos build`
+  makes instead of the VM.
 - `fmt` / `doc` - formatting and item listings.
 - `audit` / `feature_status` - dependency advisories, and whether a
   language or library feature is settled.
@@ -234,6 +238,8 @@ p = subprocess.Popen(["gos", "lsp"], stdin=subprocess.PIPE, stdout=subprocess.PI
 body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize",
                    "params": {"processId": None, "capabilities": {}}}).encode()
 p.stdin.write(f"Content-Length: {len(body)}\r\n\r\n".encode() + body); p.stdin.flush()
-print(p.stdout.readline(), p.stdout.readline())
+header = p.stdout.readline()
+p.stdout.readline()
+print(json.loads(p.stdout.read(int(header.split(b":")[1])))["result"]["serverInfo"])
 PY
 ```
