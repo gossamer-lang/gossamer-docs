@@ -86,8 +86,12 @@ In precedence order:
    `$HOME/.cache/gossamer/frontend`, or `%LOCALAPPDATA%\gossamer\frontend`.
 
 `GOS_NO_CACHE` disables reads and writes entirely, matching the LLVM object
-cache's opt-out. `gos cache status`, `gos cache prune`, and `gos clean
---frontend` report and reclaim these directories under the `frontend` class.
+cache's opt-out. `gos cache`, `gos cache --prune`, and `gos clean
+--frontend` report and reclaim these directories under the `frontend` class,
+and the daily background trim (`gos cache --trim`, scheduled by
+`GOS_CACHE_TRIM`) holds the shared one to its cap. A blob read from the cache
+has its modification time refreshed, at most hourly, so the least recently
+used blobs go first.
 
 ## Concurrency and corruption
 

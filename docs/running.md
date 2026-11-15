@@ -73,6 +73,10 @@ keeps them in the user cache, so nothing is written beside it. Objects are
 shared by every project on the machine: a library such as a GUI toolkit is
 compiled once, and a new program using it compiles only its own code.
 `gos cache` reports both, and `gos cache --prune --scope all` trims them.
+The shared roots are also trimmed on their own: once a day a build command
+starts `gos cache --trim` in the background at idle priority, holding the cache to its
+retention policy (see [the toolchain reference](toolchain.md)) without
+removing anything a running program or build still uses.
 
 `--native` does not combine with the VM's own flags (`--no-jit`,
 `--timings`). On a host without the LLVM tools, `gos run --native` runs the
@@ -106,6 +110,10 @@ alias.
   after `N` requests. Used by CI tests; leave unset for normal
   operation. A visible warning prints when the env var is
   honoured.
+- `GOS_CACHE_TRIM=never|always|INTERVAL` - how often build commands
+  trim the shared caches in the background (`30m`, `12h`, `7d`; daily when
+  unset). `GOS_CACHE_MAX_BYTES` and `GOS_CACHE_MAX_AGE_DAYS` set what a trim
+  keeps.
 - `NO_COLOR` / `CLICOLOR_FORCE` - standard colour toggles.
 - `EDITOR` - used by the REPL's `%edit` meta-command (Stream K
   follow-up).
