@@ -40,7 +40,7 @@ For receiver methods on built-in types, see [`Methods by type`](../method_suppor
 | [`std::encoding::hex`](encoding_hex.md) | Lowercase hex encode/decode. |
 | [`std::encoding::json`](encoding_json.md) | JSON parser, emitter, and derive support. |
 | [`std::encoding::pem`](encoding_pem.md) | PEM block encoder and decoder. |
-| [`std::encoding::toml`](encoding_toml.md) | TOML 1.0 parsing + emission. Pair with the turbofish `from_toml::<Type>` for typed decoding (struct auto-derive). |
+| [`std::encoding::toml`](encoding_toml.md) | TOML 1.0 parsing and emission over `json::Value`, and typed `toml::decode::<T>` / `toml::encode::<T>`. |
 | [`std::encoding::xml`](encoding_xml.md) | XML parse and encode (quick-xml) over a `json::Value` tree. |
 | [`std::encoding::yaml`](encoding_yaml.md) | YAML 1.2 parser/emitter (serde_norway-backed). |
 | [`std::env`](env.md) | Process environment, command-line arguments, working directory. |

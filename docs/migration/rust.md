@@ -220,10 +220,14 @@ struct User {
 Do not port Rust derives mechanically. `Clone`, `Copy`, `Hash`,
 `Serialize`, and `Deserialize` are automatic rather than derived, and
 writing them reports GT0025. `#[derive(Default)]` needs every field to
-have a default (GP0062). Typed serde is a pair of functions named by a
-turbofish; `#[rename("key")]`, `#[skip]`, and `#[default]` play the part
-of the `#[serde(..)]` field attributes, enums are externally tagged, and
-a `char` is a one-character string, as `serde_json` writes them:
+have a default (GP0062). Typed serde is `json::encode(v)` and
+`json::decode::<T>(text)` (the target can also come from a `let`), with
+`yaml::` and `toml::` forms of both; `#[rename("key")]`, `#[skip]`,
+`#[default]`, `#[default(value)]`, `#[rename_all("camelCase")]`, and an
+enum's `#[tag("type")]` play the part of the `#[serde(..)]` attributes.
+Struct members keep declaration order (`sort: true` orders them by key),
+enums are externally tagged by default, and a `char` is a one-character
+string, as `serde_json` writes them:
 
 ```rust
 #[derive(Serialize, Deserialize)]
@@ -245,8 +249,8 @@ struct User {
     #[rename("years")]
     age: i64
 }
-let text = json::to_json::<User>(user)?
-let back = json::from_json::<User>(text)?
+let text = json::encode(user)?
+let back: User = json::decode(text)?
 ```
 
 Aggregate values can be used directly in vectors and ordinary structs, and
@@ -454,7 +458,7 @@ Gossamer's `pub(crate)`, and it is the only restricted form: `pub(crate)`,
 | `std::sync::Mutex` | `sync::Mutex` |
 | `std::time::Duration::from_millis` | `time::Duration::from_millis` |
 | `reqwest::blocking::get(url)` | `http::get(url, [])` |
-| `serde_json::to_string(&v)` / `from_str` | `json::to_json::<T>(v)` / `json::from_json::<T>(text)` |
+| `serde_json::to_string(&v)` / `from_str` | `json::encode(v)?` / `json::decode::<T>(text)?` |
 | `Regex::new("literal")` | `regex::compile("literal")`, checked while compiling |
 | `Regex::new(pattern)?` for a run-time pattern | `regex::new(pattern)?` |
 | `crc32fast::hash(bytes)` | `hash::crc32::checksum(bytes)`, a `u32` |

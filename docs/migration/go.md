@@ -419,7 +419,7 @@ Go package's exported surface is exported to everyone.
 | `strconv.Atoi(s)` | `s.to_i64()`, an `Option<i64>` |
 | `time.Sleep(d)` | `time::sleep(ms)` |
 | `sync.WaitGroup` | `sync::WaitGroup` |
-| `json.Marshal(v)` / `json.Unmarshal` | `json::to_json::<T>(v)?` / `json::from_json::<T>(text)?` |
+| `json.Marshal(v)` / `json.Unmarshal` | `json::encode(v)?` / `json::decode::<T>(text)?` |
 | struct tag `json:"years"` / `json:"-"` | field attribute `#[rename("years")]` / `#[skip]` |
 | `regexp.MustCompile("literal")` | `regex::compile("literal")`, checked while compiling |
 | `regexp.Compile(pattern)` | `regex::new(pattern)?` |

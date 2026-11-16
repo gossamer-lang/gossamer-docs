@@ -426,5 +426,5 @@ they appear.
 | `Thread.Sleep(ms)` | `time::sleep(ms)` |
 | `HttpClient.GetAsync(url)` | `http::get(url, [])` |
 | `Regex(pattern)` | `regex::compile("literal")`, or `regex::new(pattern)?` for a pattern built at run time |
-| `JsonSerializer.Serialize(v)` / `Deserialize` | `json::to_json::<T>(v)?` / `json::from_json::<T>(text)?` |
+| `JsonSerializer.Serialize(v)` / `Deserialize` | `json::encode(v)?` / `json::decode::<T>(text)?` |
 | `[<JsonPropertyName("key")>]` / `[<JsonIgnore>]` | `#[rename("key")]` / `#[skip]` |

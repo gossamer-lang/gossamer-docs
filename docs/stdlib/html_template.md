@@ -6,6 +6,6 @@ Context-aware HTML templates with auto-escape (text/attr/URL/JS). The context cl
 
 | Item | Signature | Description |
 |---|---|---|
-| `render_json` | `fn render_json(template: String, data: json::Value) -> Result<String, errors::Error>` | render_json(source, json_data) -> Result<String, Error>: renders a context-aware HTML template against a JSON data context. Stateless and wired bit-identically across every tier. |
+| `render_json` | `fn render_json(template: String, json_text: String) -> Result<String, errors::Error>` | render_json(source, json_text) -> Result<String, Error>: renders a context-aware HTML template against a data context given as JSON text. Stateless and wired bit-identically across every tier. |
 
 <!-- hand-maintained from here: preserved by `gos doc --emit-stdlib` -->

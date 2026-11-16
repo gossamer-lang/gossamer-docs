@@ -24,5 +24,9 @@ Option combinators as data-first free functions for pipelines: map, filter, unwr
 | `or` | `fn or<T>(value: Option<T>, fallback: Option<T>) -> Option<T>` | First Some of self and the alternative. |
 | `or_else` | `fn or_else<T>(value: Option<T>, fallback: Fn() -> Option<T>) -> Option<T>` | First Some of self and a lazily built alternative. |
 | `zip` | `fn zip<T, U>(value: Option<T>, other: Option<U>) -> Option<(T, U)>` | Pairs two Somes into Some((a, b)). |
+| `is_some_and` | `fn is_some_and<T>(value: Option<T>, f: Fn(T) -> bool) -> bool` | Whether the option is Some and its payload passes the predicate. |
+| `is_none_or` | `fn is_none_or<T>(value: Option<T>, f: Fn(T) -> bool) -> bool` | Whether the option is None or its payload passes the predicate. |
+| `map_or` | `fn map_or<T, U>(value: Option<T>, default: U, f: Fn(T) -> U) -> U` | The payload mapped by f, or the default for None. |
+| `map_or_else` | `fn map_or_else<T, U>(value: Option<T>, default: Fn() -> U, f: Fn(T) -> U) -> U` | The payload mapped by f, or the default built by a callback for None. |
 
 <!-- hand-maintained from here: preserved by `gos doc --emit-stdlib` -->

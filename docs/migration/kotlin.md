@@ -461,7 +461,7 @@ Kotlin defaults to public, Gossamer defaults to private. There is no
 | `PriorityQueue` | `MinHeap::from([...])`, or `MaxHeap::from([...])` for max-first order |
 | `OkHttp` / `Ktor HttpClient` | `http::Client::new()` or `http::get(url, [])` |
 | `ktor server { ... }` | `http::serve(addr, handler)` |
-| `Json.encodeToString(v)` / `decodeFromString` | `json::to_json::<T>(v)?` / `json::from_json::<T>(text)?` |
+| `Json.encodeToString(v)` / `decodeFromString` | `json::encode(v)?` / `json::decode::<T>(text)?` |
 | `@SerialName("key")` / `@Transient` | `#[rename("key")]` / `#[skip]` |
 | `CRC32().apply { update(b) }.value` | `hash::crc32::checksum(b)`, a `u32` |
 | `kotlinx.coroutines.launch` | `spawn(|| { ... })` |

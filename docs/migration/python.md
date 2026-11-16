@@ -400,10 +400,10 @@ not a lint. Anything you want another module to reach needs `pub` or
 | `sys.argv` | `env::args()` |
 | `subprocess.run([...])` | `process::run(program, args)` |
 | `print(x)` | `println(f"{x}")` |
-| `json.dumps(v)` | `encoding::json::encode(v)` |
-| `json.loads(s)` | `encoding::json::decode::<T>(s)` |
+| `json.dumps(v)` | `json::encode(v)?` |
+| `json.loads(s)` | `json::decode::<T>(s)?`, or `json::parse(s)?` for a dynamic `json::Value` |
 | `re.compile(p)` | `regex::compile("literal")`, or `regex::new(p)?` for a pattern built at run time |
 | `s.strip()` | `s.trim()` |
 | `int(s)` | `s.to_i64()`, an `Option<i64>` |
-| `@dataclass` to and from JSON | `json::to_json::<T>(v)?` / `json::from_json::<T>(text)?` |
+| `@dataclass` to and from JSON | `json::encode(v)?` / `json::decode::<T>(text)?` |
 | `zlib.crc32(b)` | `hash::crc32::checksum(b)`, a `u32` |

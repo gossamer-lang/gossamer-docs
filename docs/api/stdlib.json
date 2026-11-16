@@ -2969,8 +2969,8 @@
       "id": "std-encoding-json-at",
       "name": "std::encoding::json::at",
       "kind": "function",
-      "signature": "fn at(value: json::Value, index: i64) -> json::Value",
-      "description": "Indexes an array element on a dynamic Value. An index the array does not have reads as JSON null.",
+      "signature": "fn at(value: json::Value, index: i64) -> Option<json::Value>",
+      "description": "The element at an index of an array; None past the end and for a value that is not an array.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -2988,8 +2988,8 @@
       "id": "std-encoding-json-decode",
       "name": "std::encoding::json::decode",
       "kind": "function",
-      "signature": "fn decode(source: String) -> Result<json::Value, errors::Error>",
-      "description": "Decodes a JSON `String` into a `Deserialize` value.",
+      "signature": "fn decode<T>(source: String) -> Result<T, errors::Error>",
+      "description": "`json::decode::<T>(text)` decodes JSON text into any type with a JSON form (a struct or enum, generic ones included, a collection, an `Option`, a tuple, a scalar), ignoring members it does not declare; a failure names the path to the value and what it found.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3007,8 +3007,8 @@
       "id": "std-encoding-json-encode",
       "name": "std::encoding::json::encode",
       "kind": "function",
-      "signature": "fn encode(value: json::Value) -> String",
-      "description": "Encodes a `Serialize` value as a JSON `String`.",
+      "signature": "fn encode<T>(value: T, sort: bool = false) -> Result<String, errors::Error>",
+      "description": "Encodes a value as compact JSON text, answering `Result<String, errors::Error>`: a struct's members in declaration order under their serde keys, or by key with `sort: true` (`json::encode(v, sort: true)?`); a `json::Value` object's and a `Map`'s keys sorted. `json::encode::<T>(v)` names the type.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3026,8 +3026,46 @@
       "id": "std-encoding-json-encode-pretty",
       "name": "std::encoding::json::encode_pretty",
       "kind": "function",
-      "signature": "fn encode_pretty(value: json::Value) -> String",
-      "description": "Renders a value as indented JSON text.",
+      "signature": "fn encode_pretty<T>(value: T, sort: bool = false) -> Result<String, errors::Error>",
+      "description": "Encodes a value as indented JSON text, answering `Result<String, errors::Error>`, members in the order `encode` writes them (`sort: true` orders a struct's members by key).",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingjson",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-json-entries",
+      "name": "std::encoding::json::entries",
+      "kind": "function",
+      "signature": "fn entries(value: json::Value) -> Option<Vec<(String, json::Value)>>",
+      "description": "An object's members as (key, value) pairs in key order; None for any other value.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingjson",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-json-from-value",
+      "name": "std::encoding::json::from_value",
+      "kind": "function",
+      "signature": "fn from_value<T>(value: json::Value) -> Result<T, errors::Error>",
+      "description": "`json::from_value::<T>(value)` decodes a `json::Value` as `json::decode::<T>` decodes text, for a subtree a program navigated to.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3080,6 +3118,25 @@
       "reference_status": "catalog_only"
     },
     {
+      "id": "std-encoding-json-is-valid",
+      "name": "std::encoding::json::is_valid",
+      "kind": "function",
+      "signature": "fn is_valid(source: String) -> bool",
+      "description": "Reports whether the text is well-formed JSON.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingjson",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
       "id": "std-encoding-json-keys",
       "name": "std::encoding::json::keys",
       "kind": "function",
@@ -3102,8 +3159,8 @@
       "id": "std-encoding-json-len",
       "name": "std::encoding::json::len",
       "kind": "function",
-      "signature": "fn len(value: json::Value) -> i64",
-      "description": "Element / field count of a dynamic Value.",
+      "signature": "fn len(value: json::Value) -> Option<i64>",
+      "description": "The element count of an array or the member count of an object; None for any other value.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3137,11 +3194,11 @@
       "reference_status": "catalog_only"
     },
     {
-      "id": "std-encoding-json-render",
-      "name": "std::encoding::json::render",
+      "id": "std-encoding-json-pointer",
+      "name": "std::encoding::json::pointer",
       "kind": "function",
-      "signature": "fn render(value: json::Value) -> String",
-      "description": "Renders a dynamic Value as compact JSON text.",
+      "signature": "fn pointer(value: json::Value, pointer: String) -> Option<json::Value>",
+      "description": "Looks up the value an RFC 6901 JSON Pointer names (`/current/weather_descriptions/0`): each token is an object member, or an array index. An empty pointer names the whole value; a pointer that names nothing answers None.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3175,11 +3232,49 @@
       "reference_status": "catalog_only"
     },
     {
-      "id": "std-encoding-json-valid",
-      "name": "std::encoding::json::valid",
+      "id": "std-encoding-json-set-max-depth",
+      "name": "std::encoding::json::set_max_depth",
       "kind": "function",
-      "signature": "fn valid(source: String) -> bool",
-      "description": "Reports whether the text is well-formed JSON.",
+      "signature": "fn set_max_depth(levels: i64) -> ()",
+      "description": "Caps how deeply arrays and objects may nest for every later parse and decode in the process; 0 or less removes the cap. The default is 128, as serde_json's.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingjson",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-json-set-max-size",
+      "name": "std::encoding::json::set_max_size",
+      "kind": "function",
+      "signature": "fn set_max_size(bytes: i64) -> ()",
+      "description": "Caps the bytes a JSON document may have for every later parse and decode in the process; 0 or less removes the cap. There is no cap by default.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingjson",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-json-to-value",
+      "name": "std::encoding::json::to_value",
+      "kind": "function",
+      "signature": "fn to_value<T>(value: T, sort: bool = false) -> Result<json::Value, errors::Error>",
+      "description": "Encodes a value as the `json::Value` its JSON text reads as, answering `Result<json::Value, errors::Error>`, the counterpart of `from_value`.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3270,11 +3365,49 @@
       "reference_status": "catalog_only"
     },
     {
-      "id": "std-encoding-toml-from-json",
-      "name": "std::encoding::toml::from_json",
+      "id": "std-encoding-toml-decode",
+      "name": "std::encoding::toml::decode",
       "kind": "function",
-      "signature": "fn from_json(source: String) -> Result<String, errors::Error>",
-      "description": "Render JSON text as TOML text; returns Result<String, errors::Error>.",
+      "signature": "fn decode<T>(source: String) -> Result<T, errors::Error>",
+      "description": "`toml::decode::<T>(text)` decodes a TOML document into any type with a JSON form, as `json::decode::<T>` decodes JSON.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingtoml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-toml-encode",
+      "name": "std::encoding::toml::encode",
+      "kind": "function",
+      "signature": "fn encode<T>(value: T, sort: bool = false) -> Result<String, errors::Error>",
+      "description": "Encodes a value whose top level is a table as a TOML document, answering `Result<String, errors::Error>`: a struct's members in declaration order (by key with `sort: true`) with an `Option` member that is `None` left out, a `json::Value` object's and a `Map`'s keys sorted. `toml::encode::<T>(v)` names the type.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingtoml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-toml-from-json-text",
+      "name": "std::encoding::toml::from_json_text",
+      "kind": "function",
+      "signature": "fn from_json_text(source: String) -> Result<String, errors::Error>",
+      "description": "Converts JSON text to a TOML document, each object's members by key; the top level must be an object.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3293,7 +3426,26 @@
       "name": "std::encoding::toml::is_valid",
       "kind": "function",
       "signature": "fn is_valid(source: String) -> bool",
-      "description": "Return true iff the string parses as TOML.",
+      "description": "Reports whether the text is a well-formed TOML document.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingtoml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-toml-parse",
+      "name": "std::encoding::toml::parse",
+      "kind": "function",
+      "signature": "fn parse(source: String) -> Result<json::Value, errors::Error>",
+      "description": "Parses a TOML document into a `json::Value`, its tables by key.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3312,7 +3464,7 @@
       "name": "std::encoding::toml::pretty",
       "kind": "function",
       "signature": "fn pretty(source: String) -> Result<String, errors::Error>",
-      "description": "Round-trip TOML through the pretty-printer.",
+      "description": "Rewrites a TOML document in the pretty-printer's layout.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3327,11 +3479,11 @@
       "reference_status": "catalog_only"
     },
     {
-      "id": "std-encoding-toml-to-json",
-      "name": "std::encoding::toml::to_json",
+      "id": "std-encoding-toml-to-json-text",
+      "name": "std::encoding::toml::to_json_text",
       "kind": "function",
-      "signature": "fn to_json(source: String) -> Result<String, errors::Error>",
-      "description": "Convert TOML text to JSON text; returns Result<String, errors::Error>.",
+      "signature": "fn to_json_text(source: String) -> Result<String, errors::Error>",
+      "description": "Converts a TOML document to JSON text, each table's members by key.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3349,8 +3501,8 @@
       "id": "std-encoding-xml-encode",
       "name": "std::encoding::xml::encode",
       "kind": "function",
-      "signature": "fn encode(value: json::Value) -> String",
-      "description": "Serialises a tree of the shape `parse` answers to XML text; any other value encodes as the empty string.",
+      "signature": "fn encode(value: json::Value) -> Result<String, errors::Error>",
+      "description": "Serialises a tree of the shape `parse` answers to XML text, answering `Result<String, errors::Error>`; a value of any other shape is an `Err`.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3384,11 +3536,68 @@
       "reference_status": "catalog_only"
     },
     {
+      "id": "std-encoding-xml-is-valid",
+      "name": "std::encoding::xml::is_valid",
+      "kind": "function",
+      "signature": "fn is_valid(source: String) -> bool",
+      "description": "Reports whether the text is a well-formed XML document.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingxml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
       "id": "std-encoding-xml-parse",
       "name": "std::encoding::xml::parse",
       "kind": "function",
       "signature": "fn parse(source: String) -> Result<json::Value, errors::Error>",
       "description": "Parses an XML document into a `json::Value` tree: an element is `{\"__xml_type\": \"element\", \"name\", \"attrs\", \"children\"}`, a text node `{\"__xml_type\": \"text\", \"value\"}`.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingxml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-xml-set-max-depth",
+      "name": "std::encoding::xml::set_max_depth",
+      "kind": "function",
+      "signature": "fn set_max_depth(levels: i64) -> ()",
+      "description": "Caps how deeply XML elements may nest for every later parse in the process; 0 or less removes the cap. The default is 128.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingxml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-xml-set-max-size",
+      "name": "std::encoding::xml::set_max_size",
+      "kind": "function",
+      "signature": "fn set_max_size(bytes: i64) -> ()",
+      "description": "Caps the bytes an XML document may have for every later parse in the process; 0 or less removes the cap. There is no cap by default.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3422,11 +3631,11 @@
       "reference_status": "catalog_only"
     },
     {
-      "id": "std-encoding-yaml-encode",
-      "name": "std::encoding::yaml::encode",
+      "id": "std-encoding-yaml-decode",
+      "name": "std::encoding::yaml::decode",
       "kind": "function",
-      "signature": "fn encode(value: json::Value) -> Result<String, errors::Error>",
-      "description": "Encodes a Value as a YAML document.",
+      "signature": "fn decode<T>(source: String) -> Result<T, errors::Error>",
+      "description": "`yaml::decode::<T>(text)` decodes a YAML document into any type with a JSON form, as `json::decode::<T>` decodes JSON.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3441,11 +3650,49 @@
       "reference_status": "catalog_only"
     },
     {
-      "id": "std-encoding-yaml-from-json",
-      "name": "std::encoding::yaml::from_json",
+      "id": "std-encoding-yaml-encode",
+      "name": "std::encoding::yaml::encode",
       "kind": "function",
-      "signature": "fn from_json(source: String) -> Result<String, errors::Error>",
-      "description": "Converts JSON text to a YAML document.",
+      "signature": "fn encode<T>(value: T, sort: bool = false) -> Result<String, errors::Error>",
+      "description": "Encodes a value as a YAML document, answering `Result<String, errors::Error>`: a struct's members in declaration order (by key with `sort: true`), a `json::Value` object's and a `Map`'s keys sorted. `yaml::encode::<T>(v)` names the type.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingyaml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-yaml-encode-all",
+      "name": "std::encoding::yaml::encode_all",
+      "kind": "function",
+      "signature": "fn encode_all(values: Vec<json::Value>) -> Result<String, errors::Error>",
+      "description": "Encodes a `Vec<json::Value>` as a multi-document YAML stream, as `parse_all` reads it back.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingyaml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-yaml-from-json-text",
+      "name": "std::encoding::yaml::from_json_text",
+      "kind": "function",
+      "signature": "fn from_json_text(source: String) -> Result<String, errors::Error>",
+      "description": "Converts JSON text to a YAML document, each object's members by key.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -3517,11 +3764,49 @@
       "reference_status": "catalog_only"
     },
     {
-      "id": "std-encoding-yaml-to-json",
-      "name": "std::encoding::yaml::to_json",
+      "id": "std-encoding-yaml-set-max-depth",
+      "name": "std::encoding::yaml::set_max_depth",
       "kind": "function",
-      "signature": "fn to_json(source: String) -> Result<String, errors::Error>",
-      "description": "Converts a YAML document to JSON text.",
+      "signature": "fn set_max_depth(levels: i64) -> ()",
+      "description": "Caps how deeply YAML collections may nest for every later parse and decode in the process; 0 or less removes the cap. The default is 128.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingyaml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-yaml-set-max-size",
+      "name": "std::encoding::yaml::set_max_size",
+      "kind": "function",
+      "signature": "fn set_max_size(bytes: i64) -> ()",
+      "description": "Caps the bytes a YAML document may have for every later parse and decode in the process; 0 or less removes the cap. There is no cap by default.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdencodingyaml",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-encoding-yaml-to-json-text",
+      "name": "std::encoding::yaml::to_json_text",
+      "kind": "function",
+      "signature": "fn to_json_text(source: String) -> Result<String, errors::Error>",
+      "description": "Converts a YAML document to JSON text, each mapping's members by key.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -6047,8 +6332,8 @@
       "id": "std-html-template-render-json",
       "name": "std::html::template::render_json",
       "kind": "function",
-      "signature": "fn render_json(template: String, data: json::Value) -> Result<String, errors::Error>",
-      "description": "render_json(source, json_data) -> Result<String, Error>: renders a context-aware HTML template against a JSON data context. Stateless and wired bit-identically across every tier.",
+      "signature": "fn render_json(template: String, json_text: String) -> Result<String, errors::Error>",
+      "description": "render_json(source, json_text) -> Result<String, Error>: renders a context-aware HTML template against a data context given as JSON text. Stateless and wired bit-identically across every tier.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -13131,11 +13416,49 @@
       "reference_status": "catalog_only"
     },
     {
+      "id": "std-option-is-none-or",
+      "name": "std::option::is_none_or",
+      "kind": "function",
+      "signature": "fn is_none_or<T>(value: Option<T>, f: Fn(T) -> bool) -> bool",
+      "description": "Whether the option is None or its payload passes the predicate.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdoption",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
       "id": "std-option-is-some",
       "name": "std::option::is_some",
       "kind": "function",
       "signature": "fn is_some<T>(value: Option<T>) -> bool",
       "description": "True for Some.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdoption",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-option-is-some-and",
+      "name": "std::option::is_some_and",
+      "kind": "function",
+      "signature": "fn is_some_and<T>(value: Option<T>, f: Fn(T) -> bool) -> bool",
+      "description": "Whether the option is Some and its payload passes the predicate.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -13174,6 +13497,44 @@
       "kind": "function",
       "signature": "fn map<T, U>(value: Option<T>, f: Fn(T) -> U) -> Option<U>",
       "description": "Transforms the Some payload, None stays None.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdoption",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-option-map-or",
+      "name": "std::option::map_or",
+      "kind": "function",
+      "signature": "fn map_or<T, U>(value: Option<T>, default: U, f: Fn(T) -> U) -> U",
+      "description": "The payload mapped by f, or the default for None.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdoption",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-option-map-or-else",
+      "name": "std::option::map_or_else",
+      "kind": "function",
+      "signature": "fn map_or_else<T, U>(value: Option<T>, default: Fn() -> U, f: Fn(T) -> U) -> U",
+      "description": "The payload mapped by f, or the default built by a callback for None.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -15126,11 +15487,49 @@
       "reference_status": "catalog_only"
     },
     {
+      "id": "std-result-is-err-and",
+      "name": "std::result::is_err_and",
+      "kind": "function",
+      "signature": "fn is_err_and<T, E>(value: Result<T, E>, f: Fn(E) -> bool) -> bool",
+      "description": "Whether the result is Err and its error passes the predicate.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdresult",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
       "id": "std-result-is-ok",
       "name": "std::result::is_ok",
       "kind": "function",
       "signature": "fn is_ok<T, E>(value: Result<T, E>) -> bool",
       "description": "True for Ok.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdresult",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-result-is-ok-and",
+      "name": "std::result::is_ok_and",
+      "kind": "function",
+      "signature": "fn is_ok_and<T, E>(value: Result<T, E>, f: Fn(T) -> bool) -> bool",
+      "description": "Whether the result is Ok and its value passes the predicate.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -15169,6 +15568,44 @@
       "kind": "function",
       "signature": "fn map_err<T, E, F>(value: Result<T, E>, f: Fn(E) -> F) -> Result<T, F>",
       "description": "Transforms the Err payload, Ok passes through.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdresult",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-result-map-or",
+      "name": "std::result::map_or",
+      "kind": "function",
+      "signature": "fn map_or<T, E, U>(value: Result<T, E>, default: U, f: Fn(T) -> U) -> U",
+      "description": "The Ok value mapped by f, or the default for Err.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdresult",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-result-map-or-else",
+      "name": "std::result::map_or_else",
+      "kind": "function",
+      "signature": "fn map_or_else<T, E, U>(value: Result<T, E>, default: Fn(E) -> U, f: Fn(T) -> U) -> U",
+      "description": "The Ok value mapped by f, or the error mapped by the default callback.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -15487,6 +15924,25 @@
       "reference_status": "catalog_only"
     },
     {
+      "id": "std-runtime-max-procs",
+      "name": "std::runtime::max_procs",
+      "kind": "function",
+      "signature": "fn max_procs() -> i64",
+      "description": "The most worker threads that run goroutines at once: what `set_max_procs` set, else `GOSSAMER_MAX_PROCS`, else the core count.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdruntime",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
       "id": "std-runtime-root",
       "name": "std::runtime::root",
       "kind": "function",
@@ -15511,6 +15967,25 @@
       "kind": "function",
       "signature": "fn scheduler_stats_json() -> String",
       "description": "Returns a compact JSON snapshot of goroutine scheduler counters.",
+      "lifecycle": "experimental",
+      "tier_support": [
+        "not_audited",
+        "not_audited",
+        "not_audited"
+      ],
+      "platform_support": "not_audited",
+      "limits": [],
+      "cookbook_tags": [],
+      "doc_anchor": "stdlib.md#stdruntime",
+      "example_id": null,
+      "reference_status": "catalog_only"
+    },
+    {
+      "id": "std-runtime-set-max-procs",
+      "name": "std::runtime::set_max_procs",
+      "kind": "function",
+      "signature": "fn set_max_procs(n: i64) -> i64",
+      "description": "Caps the worker threads that run goroutines at once and answers the cap before the call, as Go's `runtime.GOMAXPROCS`; a value below 1 only reads it. Goroutines themselves stay unbounded.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",

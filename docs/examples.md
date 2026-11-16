@@ -94,6 +94,14 @@ fn main() {
   `/echo` handler. Accepts any method, returns method / path /
   query / body as JSON. Runs under `gos`; `curl
   http://localhost:8080/echo?name=jane` exercises it.
+- **`json_structs.gos`** - typed JSON: `json::decode::<T>` and
+  `json::encode` over structs, enums, and maps, with `#[rename_all]`,
+  `#[default]`, `#[tag]`, `sort: true`, and decode errors that name the
+  failing path.
+- **`json_dynamic.gos`** - a document read at run time: `json::get`,
+  `json::at`, `json::pointer`, `json::entries`, and `json::to_value`.
+- **`yaml_demo.gos`** / **`toml_demo.gos`** - the same typed codecs for
+  YAML and TOML, multi-document YAML streams, and the text converters.
 
 ## More in the tree
 
