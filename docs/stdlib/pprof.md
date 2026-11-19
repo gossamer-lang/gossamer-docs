@@ -34,14 +34,13 @@ samples=N self=N
 
 `route` answers the paths Go's `net/http/pprof` uses, so a handler can forward straight to it:
 
-```text
-use std::http
-use std::pprof
+```gossamer
+use std::{errors, http, pprof}
 
 fn debug_handler(r: http::Request) -> Result<http::Response, errors::Error> {
     match pprof::route(r.path, r.query) {
-        Some(body) => Ok(http::Response::text(200, body))
-        None => Ok(http::Response::text(404, "not found"))
+        Some(body) => Ok(http::Response::text(200, body)),
+        None => Ok(http::Response::text(404, "not found")),
     }
 }
 ```
@@ -53,3 +52,5 @@ Paths served: `/debug/pprof/` (index), `/debug/pprof/goroutine`, `/debug/pprof/m
 `cpu_profile` and `heap_profile` are sampled rather than read from live state. A `SIGPROF` timer interrupts the running thread at 100 Hz and the handler walks the frame-pointer chain into a fixed buffer, allocating nothing and taking no lock; addresses are resolved to names when the profile is drained. `heap_profile` records one stack per 512 KiB allocated, from inside the global allocator, which is why it uses the same allocation-free walk.
 
 Sampling costs nothing until it is asked for. Instrumenting every function instead would cost about 2.7x on call-heavy code, because an opaque call at each entry is an inlining barrier; frame pointers, which the walk needs, measured free.
+
+A native program keeps the frame pointer in every one of its own functions, but the runtime it links by default leaves that register to code, which runs its hot paths faster. A walk therefore stops at the first runtime frame, and the profile says so. Build with `gos build --frame-pointers`, or set `frame-pointers = true` under `[project]`, to link a runtime built with frame pointers so stacks continue through runtime code; the first such build compiles the runtime from the toolchain's sources with `cargo` and caches it.

@@ -8,7 +8,7 @@ outside Gossamer, and why.
 
 | Dependency | Purpose | Boundary | License | Platforms | Build/runtime requirement |
 |---|---|---|---|---|---|
-| Gossamer runtime and standard library | Language, collections, text, errors | The wrapper builds on the language and the two bindings only | Apache 2.0 / MIT | Linux, Windows, macOS | Gossamer `^v0.75.9` |
+| Gossamer runtime and standard library | Language, collections, text, errors | The wrapper builds on the language and the two bindings only | Apache 2.0 / MIT | Linux, Windows, macOS | Gossamer `^v0.81.1` |
 | [gui-engine-gos](../gui-engine/index.md) | Widgets, layout, retained state, text shaping and layout, software painting, themes, dialogs, localization, Linux AT-SPI, the application loop | Rust crate `gui-engine` behind the `gui_engine_host` binding module; widget trees, messages and queries cross as JSON | Apache 2.0 | Linux X11/Wayland, Windows, macOS | A Rust toolchain to build the binding |
 | [windowing-gos](../windowing/index.md) | Native windows, input, event pump, software framebuffers, IME, clipboard, dialogs, displays | Rust crate `gos-windowing`, used by the toolkit directly and by gui-gos through `use windowing`; no SDL call leaves it | Apache 2.0 | Linux X11/Wayland, Windows, macOS | SDL 3, vendored through windowing-gos's build |
 | [zbus](https://github.com/dbus2/zbus) | Linux AT-SPI, notifications, single instance | Rust crate inside gui-engine-gos and windowing-gos; nothing in gui-gos speaks D-Bus | MIT | Linux | Session and accessibility buses at runtime; no libdbus |
@@ -50,9 +50,9 @@ Update owner: the gui-gos maintainers (this repository).
 
 ## Current minimums and distribution assets
 
-The library manifest requires Gossamer `^v0.75.17`, and the example and test
+The library manifest requires Gossamer `^v0.81.1`, and the example and test
 projects state the same floor. windowing-gos and gui-engine-gos are
-dependencies at their `v0.1.3` and `v0.1.5` tags, which `gos fetch` (or `tools/fetch.sh`
+dependencies at their `v0.3.0` and `v0.5.0` tags, which `gos fetch` (or `tools/fetch.sh`
 for every project here) prepares.
 
 The embedded fonts are DejaVu Sans and DejaVu Sans Mono 2.37, regular and

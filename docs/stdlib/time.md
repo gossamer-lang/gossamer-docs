@@ -37,3 +37,35 @@ Wall-clock and monotonic time facilities.
 | `since_ms` | `fn since_ms(start_ms: i64) -> i64` | Milliseconds elapsed since an earlier monotonic reading. |
 
 <!-- hand-maintained from here: preserved by `gos doc --emit-stdlib` -->
+
+## Time zones
+
+On Unix a zone's rules come from the system's zoneinfo (`TZDIR`, then
+`/usr/share/zoneinfo`), so they update with the operating system rather than
+with each Gossamer release. Windows and wasm use a copy bundled with the
+runtime.
+
+<!-- fragment -->
+```gossamer
+let paris = Location::lookup("Europe/Paris")?
+let here = Location::local()
+```
+
+`Location::local()` reads `TZ` as POSIX specifies, rule strings included:
+`TZ='<+0330>-3:30'` is +03:30. A `TZ` that names no readable zone means UTC,
+as in POSIX and Go. Without `TZ` it is the platform's setting, else UTC.
+
+A program carries the zones it names in string literals
+(`Location::lookup("Europe/Paris")` above) and uses them only where the host
+has no zoneinfo, as in a `scratch` or distroless image; the host's own rules
+win wherever it has them. `tzdata` under `[project]` in `project.toml` chooses
+what is carried:
+
+| `tzdata` | Carries |
+|---|---|
+| `"named"` (default) | The zones the program spells in string literals. |
+| `"all"` | The whole database, for zone names read at run time, as Go's `time/tzdata`. |
+| `"none"` | Nothing; every zone comes from the host. |
+
+Where the host has no zoneinfo, `Location::local()` reads a `TZ` that names a
+carried zone.

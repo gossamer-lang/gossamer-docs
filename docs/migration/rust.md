@@ -201,7 +201,35 @@ A trait-qualified call names the implementation explicitly, as in Rust:
 so `impl Mul<f64> for Vec2` sits beside `impl Mul for Vec2`, each with an
 optional `type Output`.
 
-There is no `unsafe` in Gossamer source.
+Rust keeps every method in an `impl` block. A Gossamer type may also hold
+methods in its own body, as Swift and C# do: write the primary API there and
+keep `impl` blocks for traits and other extensions. Both spell the same
+program:
+
+```gos
+trait Area {
+    fn area(&self) -> f64
+}
+
+struct Circle {
+    r: f64
+
+    fn unit() -> Circle { Circle { r: 1.0 } }
+    fn grown(&self) -> Circle { Circle { r: self.r + 1.0 } }
+}
+
+impl Area for Circle {
+    fn area(&self) -> f64 { 3.14159 * self.r * self.r }
+}
+```
+
+`gos fix --rewriter impl-into-type-body` converts existing `impl` blocks, and
+`--rewriter type-body-into-impl` converts them back. See
+[where methods go](../language/impl.md#where-methods-go).
+
+`unsafe` appears only around foreign code: `unsafe extern "C" { .. }`
+declares C functions and `unsafe { }` calls them. See
+[unsafe extern](../language/unsafe_extern.md).
 
 ## Derives And Value Operations
 
@@ -219,8 +247,12 @@ struct User {
 
 Do not port Rust derives mechanically. `Clone`, `Copy`, `Hash`,
 `Serialize`, and `Deserialize` are automatic rather than derived, and
-writing them reports GT0025. `#[derive(Default)]` needs every field to
-have a default (GP0062). Typed serde is `json::encode(v)` and
+writing them reports GT0025. A field may declare its own default
+(`retries: i64 = 3`), which a struct literal that leaves the field out
+takes; a struct whose every field has one builds as `T {}` or
+`T::default()` with no derive (`#[derive(Default)]` there is the `GL0061`
+lint). `#[derive(Default)]` on another struct needs every field without a
+declared default to have a zero value (GP0062). Typed serde is `json::encode(v)` and
 `json::decode::<T>(text)` (the target can also come from a `let`), with
 `yaml::` and `toml::` forms of both; `#[rename("key")]`, `#[skip]`,
 `#[default]`, `#[default(value)]`, `#[rename_all("camelCase")]`, and an

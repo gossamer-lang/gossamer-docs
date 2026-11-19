@@ -22,6 +22,14 @@ impl Area for Shape {
 }
 ```
 
+A type may instead list the traits it implements after its name and write
+their methods in its own body (`struct Square: Area { side: f64  fn area(&self)
+-> f64 { .. } }`); that is the same program as the standalone `impl`, which
+stays the usual home for a trait ([where methods go](impl.md#where-methods-go)). A
+function that matches a listed trait's name but not its signature is
+`GT0127`, as it is in a standalone `impl`, where it used to be accepted. See
+[impl](impl.md#methods-in-the-types-body).
+
 ## Associated types
 
 A trait declares `type Item` and each `impl` supplies one concrete type

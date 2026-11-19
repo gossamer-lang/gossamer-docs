@@ -7,10 +7,40 @@ Sum type declaration with payload-carrying variants.
 Variants carry tuple payloads (`Line(i64)`, `Rect(i64, i64)`), struct
 payloads (`Named { id: i64 }`), or nothing (`Dot`). Recursive payloads
 work directly with no wrapper - `enum List { Cons(i64, List), Nil }` -
-because every variant payload is already heap-shared. The `List` /
-`List` / `List` spellings are transparent and compile to the
-same thing, so reach for them only when the type reads clearer with the
-wrapper. Match exhaustively.
+because every variant payload is already heap-shared. There are no pointer
+wrappers: `Box<List>`, `Rc<List>`, or `Arc<List>` is `GT0079`, naming the
+type to write instead. Match exhaustively.
+
+## Field defaults and methods in the body
+
+A struct variant's fields take defaults as a struct's do, and an enum may hold
+its methods in its own body after its variants, listing the traits they
+implement after its name:
+
+```gossamer
+trait Area {
+    fn area(&self) -> f64
+}
+
+enum Shape: Area {
+    Circle { r: f64 = 1.0 }
+    Rect { w: f64, h: f64 = 2.0 }
+
+    fn area(&self) -> f64 {
+        match self {
+            Shape::Circle { r } => 3.0 * r * r,
+            Shape::Rect { w, h } => w * h,
+        }
+    }
+}
+
+println(f"{Shape::Circle {}.area()} {Shape::Rect { w: 3.0 }.area()}")
+```
+
+After an enum's name, an unsigned width (`enum Level: u16`) sets the
+discriminant's width, as [below](#how-wide-the-discriminant-is); any other
+name lists a trait. See [struct](struct.md#field-defaults) for the default
+rules and [impl](impl.md#methods-in-the-types-body) for the body rules.
 
 ## Variant names
 

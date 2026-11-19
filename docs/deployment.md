@@ -78,6 +78,11 @@ ENTRYPOINT ["/server"]
 Image sizes settle around 20-30 MiB for a typical HTTP service (smaller
 on `scratch` with a static musl binary).
 
+A `scratch` or distroless image has no zoneinfo. A program carries the IANA
+zones it names in string literals and uses them there; one that reads zone
+names at run time sets `tzdata = "all"` under `[project]` to carry the whole
+database. See [std::time](stdlib/time.md#time-zones).
+
 ## Process supervision: systemd
 
 Drop a unit file at `/etc/systemd/system/myservice.service`:
@@ -89,7 +94,8 @@ After=network.target
 Documentation=https://example.com/myservice
 
 [Service]
-Type=simple
+# The program calls lifecycle::ready() once it serves traffic.
+Type=notify
 User=myservice
 Group=myservice
 ExecStart=/usr/local/bin/myservice
@@ -136,10 +142,31 @@ journalctl -u myservice -f
 
 Gossamer services should handle SIGTERM (sent by `systemctl
 stop`) so in-flight requests finish before the process exits.
-An in-process signal API is planned (v1.x). Today, drive graceful
-shutdown from the supervisor: with systemd, set `KillSignal=SIGTERM`
-and `TimeoutStopSec=30s` in the unit file so in-flight requests have
-time to finish before the process is forced down.
+[`std::lifecycle`](stdlib/lifecycle.md) does this: `await_shutdown()`
+returns when shutdown begins, from SIGTERM, SIGINT, or
+`lifecycle::shutdown()`. At that point readiness drops and every server stops
+accepting while its in-flight requests finish; the statements after it are the
+drain sequence:
+
+```gossamer
+use std::{errors, http, lifecycle}
+
+fn handler(r: http::Request) -> Result<http::Response, errors::Error> {
+    Ok(http::Response::text(200, "ok"))
+}
+
+fn main() {
+    spawn(|| http::serve("0.0.0.0:8080", handler))
+    lifecycle::ready()
+    lifecycle::await_shutdown()
+    println("shutting down")
+}
+```
+
+`lifecycle::ready()` also sends `sd_notify(READY=1)` under systemd. For
+other signals, subscribe with [`std::os::signal`](stdlib/os_signal.md). Give
+the drain time in the unit file, so in-flight requests finish before the
+process is forced down:
 
 ```ini
 [Service]
@@ -181,7 +208,8 @@ For shipping to a log aggregator that doesn't read the journal:
 Gossamer reads the OS CPU count at startup and runs up to that many
 scheduler threads, starting them as goroutines call for them, as Go
 does: an idle service runs a handful of threads, and one with work for
-every core runs a thread per core. Override the bound with
+every core runs a thread per core. A worker idle for 10 s exits, down to
+one, so threads started for a burst are given back. Override the bound with
 `GOSSAMER_MAX_PROCS`:
 
 ```sh
@@ -231,21 +259,26 @@ page faults under churn.
 
 ## Health check / readiness
 
-A typical HTTP service exposes `/healthz`:
+A typical HTTP service exposes a liveness route and a readiness route. The
+readiness route answers from `lifecycle::is_ready()`, which is false before
+`lifecycle::ready()` and once shutdown begins, so the probe fails ahead of the
+drain:
 
 <!-- fragment -->
-```gos
-fn handler(req: http::Request) -> http::Response {
-    match req.path() {
-        "/healthz" => http::Response::text(200, "ok"),
+```gossamer
+fn handler(req: http::Request) -> Result<http::Response, errors::Error> {
+    match req.path {
+        "/healthz" => Ok(http::Response::text(200, "ok")),
+        "/readyz" if lifecycle::is_ready() => Ok(http::Response::text(200, "ready")),
+        "/readyz" => Ok(http::Response::text(503, "not ready")),
         _ => app_handler(req),
     }
 }
 ```
 
-Wire this into the load balancer's readiness probe. systemd has
-no native HTTP probe; use `Type=notify` and a small `sd_notify`
-shim, or rely on the load balancer.
+Wire `/readyz` into the load balancer's readiness probe. Under systemd, use
+`Type=notify`: `lifecycle::ready()` sends `READY=1`, and
+`lifecycle::notify_status(..)` reports free-text status.
 
 ## Updates / zero-downtime deploys
 
@@ -284,31 +317,20 @@ goroutine 17 [chan receive]:
   ...
 ```
 
-### pprof endpoint (planned)
+### pprof endpoints
 
-A `std::pprof` module to mount `/debug/pprof/*` is planned for v1.x.
-The intended shape routes the request path and query through
-`pprof::route` and returns the profile bytes:
-
-```text
-fn pprof_handler(req: &http::Request) -> http::Response {
-    match pprof::route(req.path(), req.query()) {
-        Some(bytes) => http::Response::json(200, bytes),
-        None        => http::Response::text(404, "not found"),
-    }
-}
-```
-
-Then:
+`std::pprof` serves the paths Go's `net/http/pprof` uses; forward a route to
+`pprof::route` (see [std::pprof](stdlib/pprof.md#mounting-the-endpoints)) and
+read the profiles with the usual tools:
 
 ```sh
-go tool pprof -text http://localhost:8080/debug/pprof/profile
-go tool pprof -web  http://localhost:8080/debug/pprof/heap
-go tool pprof       http://localhost:8080/debug/pprof/goroutine
+go tool pprof -text http://localhost:8080/debug/pprof/goroutine
 ```
 
-The legacy text profile format is what Gossamer emits today;
-the protobuf-encoded variant lands in Phase 2.
+Profiles use the legacy text format `go tool pprof -text` reads. For CPU and
+heap profiles whose stacks continue through runtime code, build with
+`gos build --release --frame-pointers` (or `frame-pointers = true` under
+`[project]`).
 
 ### `gos test --race`
 

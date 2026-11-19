@@ -36,6 +36,13 @@ removes values, so a local may read `<optimized out>` and stepping may jump
 between lines. A debug build (`gos build -g`, no `--release`) keeps every
 local in its stack slot.
 
+`-g` also keeps the executable's whole symbol table. Without it, a release
+executable on Linux and the BSDs keeps only the names a panic trace, a
+`SIGQUIT` dump, or a profile prints. A `-g` build keeps the frame pointer in
+every program function, as a build without it does, so profilers walk its
+stacks; to walk through runtime frames too, add `--frame-pointers` (see
+[std::pprof](stdlib/pprof.md#sampling)).
+
 `gos run` executes on the bytecode VM and the JIT, which a native debugger
 does not step through; build the program to debug it. A panic in any tier
 prints the call stack with source lines, which is often enough without a

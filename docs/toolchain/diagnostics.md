@@ -88,6 +88,7 @@ version. This page is auto-generated from the catalogue in
 | [`GP0054`](#gp0054) | Parser | shared reference in parameter position |
 | [`GP0055`](#gp0055) | Parser | shared reference on a call argument |
 | [`GP0068`](#gp0068) | Parser | malformed serde attribute |
+| [`GP0069`](#gp0069) | Parser | a type-body function two listed traits declare |
 | [`GR0001`](#gr0001) | Resolve | unresolved name |
 | [`GR0002`](#gr0002) | Resolve | wrong namespace |
 | [`GR0003`](#gr0003) | Resolve | duplicate item |
@@ -104,6 +105,7 @@ version. This page is auto-generated from the catalogue in
 | [`GR0023`](#gr0023) | Resolve | reflecting generic called without a type |
 | [`GR0024`](#gr0024) | Resolve | glob import of something other than an enum |
 | [`GR0025`](#gr0025) | Resolve | or-pattern alternatives bind different names |
+| [`GR0026`](#gr0026) | Resolve | field default reads another field |
 | [`GT0001`](#gt0001) | Types | type mismatch |
 | [`GT0002`](#gt0002) | Types | unresolved method |
 | [`GT0003`](#gt0003) | Types | unresolved operator |
@@ -117,6 +119,8 @@ version. This page is auto-generated from the catalogue in
 | [`GT0124`](#gt0124) | Types | serde target with no JSON form |
 | [`GT0125`](#gt0125) | Types | serde call names no target type |
 | [`GT0126`](#gt0126) | Types | encode over a type parameter |
+| [`GT0127`](#gt0127) | Types | trait impl method differs from the trait |
+| [`GT0128`](#gt0128) | Types | generic function's type arguments not inferred |
 
 ## `GP0001` <a id="gp0001"></a>
 
@@ -574,6 +578,12 @@ No parameter is a shared reference, so the sigil changes nothing: an argument is
 
 A serde attribute is malformed, misplaced, or conflicts with another. On a struct or enum, `#[rename_all("rule")]` respells every field or variant without its own `#[rename]` (rules: `lowercase`, `UPPERCASE`, `camelCase`, `PascalCase`, `snake_case`, `SCREAMING_SNAKE_CASE`, `kebab-case`, `SCREAMING-KEBAB-CASE`). On an enum, `#[tag("member")]` writes each variant as one object holding that member; its variants are unit, struct, or one-field variants holding a struct. On a variant, `#[rename("name")]`. On a field, `#[rename("key")]`, `#[skip]`, `#[default]`, and `#[default(value)]` with a literal of the field's type, `None`, or a unit variant of its enum. Two fields or variants written under one name are also reported.
 
+## `GP0069` <a id="gp0069"></a>
+
+**Parser** - a type-body function two listed traits declare
+
+A function in a type's body has a name more than one of the traits the type lists declares. A body function implements the one listed trait that declares its name, so with two the declaration does not say which; the compiler never picks. `Display` and `Debug` both declare `fmt`: list one on the type and write the other as a standalone `impl Debug for T { fn fmt(&self) -> String { .. } }`.
+
 ## `GR0001` <a id="gr0001"></a>
 
 **Resolve** - unresolved name
@@ -670,6 +680,12 @@ A `use path::*` whose path names no enum of this program. A glob import brings e
 
 An or-pattern's alternatives bind different names. Whichever alternative matches, the arm reads the same names, so a name one alternative binds and another does not would be unbound when that other one matched. Bind the name in every alternative, or match the alternatives in separate arms.
 
+## `GR0026` <a id="gr0026"></a>
+
+**Resolve** - field default reads another field
+
+A field default reads `self` or another field of its struct. A default is evaluated when a literal leaves its field out, before the value it belongs to exists, so there is no `self` and no other field to read: `struct S { a: i64 = 1, b: i64 = a + 1 }` has no `a` when `b`'s default runs. A default may call functions and build values of its own; a value that depends on other fields is computed where the struct is built, or by a constructor function.
+
 ## `GT0001` <a id="gt0001"></a>
 
 **Types** - type mismatch
@@ -747,4 +763,16 @@ A typed serde call (`json::decode::<T>`, `json::encode::<T>`, `json::from_value:
 **Types** - encode over a type parameter
 
 `json::encode`, `json::encode_pretty`, `json::to_value`, `yaml::encode`, and `toml::encode` write a value through a walk generated for one concrete type, as `json::encode::<T>` does, so an encode of a value whose type is, or holds, a type parameter (`fn text<T>(v: T) { json::encode(v) }`) has no walk to run. Call the encoder where the type is concrete, in the caller that names it, and pass the text in.
+
+## `GT0127` <a id="gt0127"></a>
+
+**Types** - trait impl method differs from the trait
+
+A method of a trait impl does not match the trait's declaration of it: its receiver (`self`, `&self`, `&mut self`, or none), its parameter count, a parameter's type, or its return type differs. A call through the trait passes and expects what the trait declares, so the impl's method has to take and answer exactly that, with `Self` meaning the implementing type. This holds the same for a method written in a type's body (`struct S: Trait { fn m(..) }`): a body function whose name a listed trait declares implements it, and never falls back to an inherent method.
+
+## `GT0128` <a id="gt0128"></a>
+
+**Types** - generic function's type arguments not inferred
+
+A generic function is named as a value, or called, with a type argument nothing in the program fixes: `let f = id` with `f` never called, or `fn none<T>() -> Option<T>` called where its answer is never used. Every tier runs one instantiation of the function, so each type argument has to be known. Name it with `id::<i64>`, give the binding a function type (`let f: fn(i64) -> i64 = id`), or use the value where its type is fixed.
 

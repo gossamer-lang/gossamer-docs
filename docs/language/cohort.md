@@ -180,20 +180,21 @@ fn search(space: Vec<Board>) -> Result<i64, errors::Error> {
 
 Scheduling is cooperative. A goroutine hands its worker back at a
 *safepoint* - a channel or `select` operation, a mutex, `time::sleep`, a
-scheduler-aware read, and every function call and scheduler step - and a
-watchdog asks a long-running worker to yield at the next one. Nothing
+scheduler-aware read, and in compiled code the head of each loop nest - and
+one that has run for a 10 ms slice is asked to yield at the next one. Nothing
 relocates a running goroutine off its worker asynchronously, as Go's signal
 handler does.
 
-That distinction shows up in exactly one shape: a CPU-bound loop that calls
-nothing at all. The bytecode VM still yields on such a loop's back-edges, but a
-`gos build` binary does not - the compiled backends leave loop back-edges
-un-polled so the optimizers can keep numeric loops tight. Such a loop holds one
-worker until it finishes; its peers keep running on the others.
+That distinction shows up in exactly one shape: a loop nest that is counted all
+the way down (`for` over ranges) and calls none of the program's own functions.
+Compiled code leaves such a nest unpolled so the optimizers keep numeric kernels
+tight, and it holds one worker until it finishes; its peers keep running on the
+others. The bytecode VM still yields on its back edges.
 
-The fix is the same one cancellation already asks for: give a long computation
-a point where it is willing to stop. The `runtime::cohort_cancelled()` check
-above is one, and so is any ordinary call on an outer iteration.
+To hand the worker back from a long kernel, call one of the program's own
+functions in its outer loop, or make the outer loop a `while`: either makes the
+nest polled at its head. The `runtime::cohort_cancelled()` check above lets the
+kernel stop when its cohort is cancelled; it does not by itself yield.
 
 ## Settings
 

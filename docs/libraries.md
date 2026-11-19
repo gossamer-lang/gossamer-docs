@@ -42,6 +42,17 @@ license = "Apache-2.0"
 # its own or a dependency's. Absent reads as `true`; `false` makes any
 # such declaration GT0102 (see Foreign code below).
 ffi = false
+# Which IANA time zones the program carries for a host with no zoneinfo
+# (a `scratch` or distroless image). "named" (the default) carries the
+# zones the program spells in string literals; "all" carries the whole
+# database, for zone names read at run time; "none" carries nothing.
+# See std::time.
+tzdata = "named"
+# Link a runtime built with frame pointers, so std::pprof CPU and heap
+# profiles follow stacks through runtime code. The first such build
+# compiles the runtime from the toolchain's sources with `cargo` and
+# caches it. Same as `gos build --frame-pointers`.
+frame-pointers = false
 
 [dependencies]
 # A bare version pins; `^1.2.3` accepts 1.2.3 or anything later.

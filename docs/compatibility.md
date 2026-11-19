@@ -78,6 +78,14 @@ Every rewriter is:
 - **verified** - the file is re-checked after rewriting, and the result
   is discarded rather than written if it would introduce a diagnostic.
 
+A plain `gos fix` applies the version migrations. A few rewriters change the
+form of correct code rather than migrating it, so they run only when named:
+`gos fix --rewriter impl-into-type-body` moves standalone `impl` blocks into
+their type's body, `--rewriter type-body-into-impl` moves them back, and
+`--rewriter fields-take-literal-defaults` turns a value every literal writes
+into the field's declared default. `gos fix --list` marks them
+`[only when named]`.
+
 `gos fix` is separate from `gos lint --fix` on purpose. A lint is an
 observation about the code you wrote, and you are entitled to disagree
 with it. A migration is a mechanical upgrade the toolchain owns; there

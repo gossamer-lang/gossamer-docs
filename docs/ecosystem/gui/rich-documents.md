@@ -10,7 +10,7 @@ formatting, list commands and background import/export/image loading.
 use gui::rich::{Document, Format, Edit, Mark}
 let document = Document::import(Format::Markdown, "# Notes\n\nHello **world**")?
 let block = document.outline(0, 1)?[0].block
-let info = document.info()
+let info = document.info()?
 document.transact(info.revision, #[Edit::SetMark {
     block: block, start: 0, end: 5, mark: Mark::Strong, enabled: true
 }])?

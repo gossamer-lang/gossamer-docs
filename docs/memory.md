@@ -152,7 +152,14 @@ described in the [concurrency memory model](design/memory_model.md).
 - **Compact representation.** A recursive enum's heap node carries an 8-byte
   runtime header. Enums with at most 4 variants store their
   discriminant in pointer tag bits, so a two-pointer tree node costs
-  24 bytes - and only 16 inside an arena.
+  24 bytes - and only 16 inside an arena. A struct packs its narrow
+  fields together, beside its handles as well as beside each other:
+  `struct Cell { alive: bool, next: bool, neighbors: Vec<(i64, i64)> }`
+  takes 16 bytes in a vector, a map, or a field, and still sorts, keys,
+  prints, and encodes field by field. A vector made with a known capacity
+  small enough for the allocator's small-object pages
+  (`Vec::with_capacity(n)`, a sized copy) holds its header and elements in
+  one block.
 
 ## Uniqueness
 

@@ -82,9 +82,10 @@ generated for the value's concrete type, so encode where the type is known:
 inside `fn text<T>(v: T)`, `json::encode(v)` is GT0126.
 
 Decoding is strict: every member a struct declares must be present
-(unless it is an `Option` or carries `#[default]`), members the struct
-does not declare are ignored, and a failure names the path to the value
-that failed and what it found:
+(unless it is an `Option`, carries `#[default]`, or declares a
+[field default](../language/struct.md#field-defaults), which a missing member
+takes), members the struct does not declare are ignored, and a failure names
+the path to the value that failed and what it found:
 
 ```text
 address.zip: expected string, found 150

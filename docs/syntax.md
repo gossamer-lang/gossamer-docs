@@ -71,6 +71,34 @@ impl Area for Shape {
 }
 ```
 
+A struct field may declare a default after its type, which a literal that
+leaves the field out takes. A type may also hold its primary API in its own
+body, after its fields or variants, while traits and other extensions go in
+`impl` blocks; both spell the same program:
+
+```gossamer
+trait Area {
+    fn area(&self) -> f64
+}
+
+struct Square {
+    side: f64 = 1.0
+
+    fn doubled(&self) -> Square { Square { side: self.side * 2.0 } }
+}
+
+impl Area for Square {
+    fn area(&self) -> f64 { self.side * self.side }
+}
+
+let unit = Square {}
+let big = Square { side: 3.0 }.doubled()
+println(f"{unit.area()} {big.area()}")
+```
+
+See [struct](language/struct.md#field-defaults) and
+[where methods go](language/impl.md#where-methods-go).
+
 A function that answers a value declares the type it answers with. A body
 whose tail expression produces one through a signature with no `-> T`
 reports the `GL0055` warning, since the caller reads the signature and takes
@@ -465,13 +493,13 @@ Channels are typed: `channel()` / `channel(0)` is unbuffered,
 queue form. `select` multiplexes sends and receives; it is a keyword, so
 no function, method, or field may be named `select`.
 
-Scheduling uses watchdog-requested cooperative safepoints; there is no
-asynchronous preemption. Park points and every function boundary yield, and the
-bytecode VM also polls loop back-edges every 1,024 iterations. The compiled
-back-ends leave back-edges un-polled, so a CPU-bound loop that calls nothing
-holds its worker to completion in a `gos build` binary - give it a call on an
-outer iteration to hand the worker back. The watchdog requests a yield and may
-interrupt a blocking syscall with `SIGURG` or a Windows APC. See
+Scheduling is cooperative; there is no asynchronous preemption. A goroutine
+yields at channel, `select`, lock, and `sleep` operations, and when it has run
+for a slice (10 ms) it is asked to yield at its next safepoint. Compiled code
+has a safepoint at the head of the outermost loop of each loop nest; a nest
+that is counted all the way down (`for` over ranges) and calls none of the
+program's own functions runs to completion first. The bytecode VM polls every
+1,024 loop back edges. See
 [runtime design - Preemption](design/runtime.md#preemption).
 
 ## Closures and higher-order fns
@@ -598,6 +626,15 @@ use std::fs as filesystem
 
 let value = json::parse(text)?
 let bytes = filesystem::read(path)?
+```
+
+A group imports several paths in one declaration, as Rust's root
+`use { .. }` does; each entry means what it would on a line of its own, and
+`gos fmt` keeps a group as written:
+
+<!-- fragment -->
+```gossamer
+use {bench::Bench, config::Config, std::{fs, strings}}
 ```
 
 Writing `json::parse(text)` without importing `std::encoding::json` is an

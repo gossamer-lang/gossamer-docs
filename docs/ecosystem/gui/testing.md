@@ -1,6 +1,6 @@
 # Testing
 
-Set `GOS` to a Gossamer 0.75.17 or newer executable when `gos` on your `PATH`
+Set `GOS` to a Gossamer 0.81.1 or newer executable when `gos` on your `PATH`
 is older; `tools/check-toolchain.sh` checks it. `tools/fetch.sh` fetches the
 tagged windowing-gos and gui-engine-gos releases for the library and every
 example and test project, and the release gate runs it first.

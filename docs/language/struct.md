@@ -11,7 +11,7 @@ individual fields:
 
 <!-- fragment -->
 ```gossamer
-let p2 = Point { x: 10, y: p1.y }
+let p2 = Point { x: 10, ..p1 }
 ```
 
 - Explicit fields win over the base for the same name.
@@ -68,6 +68,56 @@ let p = Point {
     y: 4
 }
 ```
+
+## Field defaults
+
+A field may declare a default after its type. A struct literal may leave such
+a field out and takes the default for it, or write the field to override it.
+A field without a default is still required in every literal (`GT0035`):
+
+```gossamer
+struct Rng { seed: u64 = 7 }
+
+struct Settings {
+    name: String
+    retries: i64 = 3
+    tags: Vec<String> = #[]
+    rng: Rng = Rng::default()
+}
+
+let s = Settings { name: "svc" }
+let t = Settings { name: "batch", retries: 5 }
+println(f"{s.retries} {t.retries} {s.tags.len()} {s.rng.seed}")
+```
+
+- A default is any expression, calls included, and runs at every
+  construction that leaves the field out, so each value gets one of its own:
+  two `Settings { name: "a" }` never share a `Vec` or an `Rng`.
+- A default means what it means where the struct is declared, whichever
+  module the literal is in. It cannot read `self` or another field of its
+  struct (`GR0026`), and it is checked against the field's type once, at the
+  declaration.
+- A struct whose every field has a default builds as `T {}` or
+  `T::default()`; `#[derive(Default)]` on it is redundant (`GL0061`).
+- `json::decode::<T>`, `yaml`, and `toml` read a missing key as the field's
+  default, unless the field carries a `#[default(..)]` of its own.
+- Enum struct variants take defaults the same way: see [enum](enum.md).
+- Once built, a defaulted field is an ordinary field: printing, equality,
+  ordering, and hashing do not see defaults.
+
+A literal that writes a field with exactly its declared default is the
+`GL0060` lint, and `gos lint --fix` drops the restated value. `gos fix
+--rewriter fields-take-literal-defaults` goes the other way for existing code:
+it gives a field the default every literal of its struct writes, and removes
+that value from the literals.
+
+## Methods in the type's body
+
+A struct may hold its methods, associated types, and constants in its own body,
+after its fields, and list the traits they implement after its name. The body
+is the place for the type's primary API and `impl` blocks for its extensions;
+see [where methods go](impl.md#where-methods-go) and
+[impl](impl.md#methods-in-the-types-body).
 
 ## Value semantics: copy and compare with no derive
 

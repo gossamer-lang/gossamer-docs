@@ -100,8 +100,11 @@ and another when a goroutine is placed while every started worker
 already has one. The pool's bound defaults to `num_cpus()`, overridable
 via `GOSSAMER_MAX_PROCS=N` or `runtime::set_max_procs(n)` from
 user code. A parked worker sleeps until a wake or its next timer, and
-the watchdog that preempts long-running goroutines sleeps while no
-worker runs one, so an idle program makes no system calls.
+the watchdog sleeps while no worker needs it (on Linux, unless a worker sits
+in a blocking call), so an idle program makes no system calls. A worker
+that has had no goroutine of its own for 10 s exits, down to one, so a
+program that once ran a burst of goroutines gives its threads and their
+memory back.
 
 Deferred JIT promotion reports compile time, emitted native-code bytes, and
 process RSS through VM diagnostics. Set `GOS_JIT_MAX_CODE_BYTES=N` to reject a
@@ -117,9 +120,10 @@ A `MultiScheduler` owns:
   pushes and the netpoller's wakeup path,
 - a `parked` map keyed by `Gid` for goroutines suspended on I/O,
   channels, mutexes, sleeps, or the blocking-syscall pool,
-- a watchdog thread that bumps the cooperative preempt phase
-  every 5 ms and signals SIGURG to a worker that's been running
-  more than 100 ms.
+- a watchdog thread that asks a worker running past its 10 ms slice to
+  yield (on Linux each worker times itself instead, on its own CPU
+  clock; see [Preemption](#preemption)), starts workers for blocked
+  system calls, and applies the allocator purge.
 
 ## Goroutines
 
@@ -168,56 +172,57 @@ to the injector instead of leaving it parked.
 
 ## Preemption
 
-Scheduling is **cooperative**, with a watchdog that requests a yield and, past
-a longer threshold, interrupts the worker's syscalls. There is no asynchronous
-preemption: nothing moves a running goroutine off its worker without that
-goroutine reaching a safepoint. This is the one place the runtime is weaker
-than Go 1.14 and later, whose signal handler relocates a goroutine from a
-loop that never yields.
+Scheduling is **cooperative**: nothing moves a running goroutine off its worker
+without that goroutine reaching a safepoint. This is the one place the runtime
+is weaker than Go 1.14 and later, whose signal handler relocates a goroutine
+from a loop that never yields.
 
 A goroutine yields the worker M at *safepoints*:
 
 - every park point - channel send/recv, `select`, mutex contention,
   `time::sleep`, scheduler-aware network reads, and core filesystem operations,
-- function-call / scheduler-step boundaries, where the worker can
-  reclaim the coroutine between `step()` invocations,
+- in compiled code (the LLVM native tier and the Cranelift JIT), the head of
+  the outermost loop of each loop nest, once per pass of that loop. A poll is a
+  test of the runtime's `gos_rt_preempt_requested` byte and a branch to a cold
+  call when it is set (`gossamer-mir/src/preempt.rs` chooses the headers). A
+  nest that is counted all the way down and calls none of the program's own
+  functions is not polled: it is the numeric kernel whose trip counts its
+  caller chose, and it runs to completion. A call into the program's own code
+  is not itself a safepoint; it makes the nest that contains it polled,
 - loop back-edges **on the bytecode VM**, which polls every 1,024 taken
-  back-edges and yields its OS worker when the watchdog phase has changed.
+  back-edges.
 
-The compiled tiers do **not** poll loop back-edges. `emit_preempt_check` on the
-LLVM path is deliberately a no-op and the Cranelift JIT emits no back-edge
-poll: the opaque runtime call and its countdown state block the optimizers on
-exactly the numeric loops those backends exist to recover. `gos_rt_preempt_check`
-and `gos_rt_preempt_check_and_yield` stay in the ABI for when a cheaper
-safepoint shape lands.
+A goroutine is asked to yield once it has run for a 10 ms slice:
 
-The watchdog thread (`sched::multi::watchdog_loop`, 5 ms tick) escalates
-against a worker that has not reached a safepoint:
+- On Linux each worker arms a timer on its own thread CPU clock
+  (`CLOCK_THREAD_CPUTIME_ID`) once for its life. The timer delivers `SIGURG`
+  to that worker alone at every 10 ms of CPU it uses, and the handler sets the
+  yield request. The clock stands still while the worker is parked, so a park
+  or resume costs no system call, and the watchdog thread sleeps unless a
+  worker sits in a blocking call.
+- Elsewhere, and on a Linux host that refuses the timer, the watchdog thread
+  (`sched::multi::watchdog_loop`) checks each running worker's last yield every
+  ~5 ms and raises the yield request for one that has run more than 10 ms
+  without one.
 
-- after ~10 ms it bumps the global *preempt phase*
-  (`preempt::request_yield_all`); the next `preempt::should_yield`
-  poll at any safepoint returns `true` and the goroutine yields,
-- after ~100 ms it sends a real OS signal to that worker's thread -
-  `SIGURG` on Unix, a `QueueUserAPC` on Windows. The signal does not itself
-  context-switch. It flips the yield flag and interrupts a blocking syscall the
-  worker is stuck inside (the kernel returns `EINTR`), which is what rescues a
-  worker blocked in a non-scheduler-aware call. A goroutine spinning in a
-  call-free compiled loop reads no flag, so the signal does not dislodge it.
+Neither path interrupts a worker from another thread; the request is read at
+the goroutine's next safepoint. The watchdog also starts workers for goroutines
+waiting behind a blocked system call, drives vacant pollers, and applies the
+allocator purge.
 
 ### What this means for a program
 
-A CPU-bound loop that calls nothing - no function call, no allocation, no
-channel or timer operation - holds its worker until it finishes:
+A CPU-bound loop nest that is counted all the way down (`for` over ranges) and
+calls none of the program's functions holds its worker until it finishes; any
+other loop yields within a slice. On the bytecode VM every loop yields through
+the back-edge poll.
 
-- on the bytecode VM it still yields, through the back-edge poll;
-- in a `gos build` binary, and in a JIT-compiled body, it does not.
-
-With `GOMAXPROCS`-many workers this starves one worker, not the program: peers
-keep running. It becomes visible when such a loop outnumbers the workers, or
-when a single-worker configuration runs one. Give a long computation a
-safepoint the way you would give it a cancellation point - call
-`runtime::cohort_cancelled()`, or any other function, on an outer iteration -
-and the scheduler reclaims the worker at that call.
+With max-procs workers this starves one worker, not the program: peers keep
+running. It becomes visible when such nests outnumber the workers, or when a
+single-worker configuration runs one. To hand the worker back from a long
+counted kernel, call one of the program's own functions in its outer loop, or
+make the outer loop a `while`; either makes the nest polled at its head.
+`runtime::cohort_cancelled()` is a cancellation check, not a safepoint.
 
 A VM configured with one goroutine worker can still be monopolized by one
 nonterminating task; replacing that pool with resumable VM frames remains a
