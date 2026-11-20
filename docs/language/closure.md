@@ -70,8 +70,9 @@ fn main() {
 }
 ```
 
-Answer the value through `join()` instead, send it on a channel, or share it
-through a `sync::Shared`.
+Answer the value through `join()` instead, send it on a channel, or share an
+integer through a `sync::Shared`, updated with `update(|n| ..)` so concurrent
+writes are not lost (`GL0066`).
 
 Calling a method declared `&mut self` on a captured value is a write too,
 whatever the method is called.

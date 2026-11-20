@@ -13,7 +13,7 @@ Synchronisation primitives beyond channels.
 | `Receiver` | `type Receiver` | The receiving end of a channel: `recv() -> Option<T>` waits for a value, `None` once it is closed and drained; `try_recv() -> Option<T>` answers at once, `None` when nothing is queued. |
 | `Mutex` | `type Mutex` | Mutual-exclusion lock: `lock()` / `unlock()` around the code it guards. |
 | `RwLock` | `type RwLock` | Reader-writer lock guarding an `i64`: `read`, `write`, `with_read` (calls back with the value read under the shared lock, released first), `with_write` (calls back holding the exclusive lock and stores the answer). |
-| `Shared` | `type Shared` | A value several goroutines reach, every read and write taken under one lock. Build with `Shared::new(value)`; read with `get` or `with`, write with `set`, and read-modify-write with `update`, which holds the lock across the callback. |
+| `Shared` | `type Shared` | An integer several goroutines reach, every read and write taken under one lock; it guards one integer word, and any other type is `GT0077`. Build with `Shared::new(n)`; read with `get` or `with`, write with `set`, and read-modify-write with `update`, which holds the lock across the callback. `x.set(x.get() + 1)` takes the lock twice and loses a write made in between (`GL0066`). |
 | `Once` | `type Once` | One-shot initialisation latch: `call(f)` runs `f` the first time and answers whether this call ran it. |
 | `WaitGroup` | `type WaitGroup` | Counts goroutines and waits for them to finish: `add(n)`, `done()`, `wait()`, and `wait_ctx(ctx)`, which answers whether the group finished before `ctx` ended. |
 | `Barrier` | `type Barrier` | Synchronisation barrier across goroutines: `wait()` returns once every party has arrived. |

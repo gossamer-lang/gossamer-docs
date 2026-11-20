@@ -8,6 +8,7 @@ Mathematical constants and f64 functions (Go's math package shape).
 
 | Item | Signature | Description |
 |---|---|---|
+| `Decimal` | `type Decimal` | Exact decimal number (`0.1 + 0.2 == 0.3`): `Decimal::parse(text)` (a `Result`), `Decimal::from_i64(n)`, `+ - * /` and unary `-`, comparison and ordering, `round(digits)` and `div_scaled(other, digits)` rounding half to even, `abs`, `is_zero`, `to_f64`; `/` keeps 28 digits after the point. Prints in its shortest exact form. |
 | `PI` | `const PI` | Archimedes' constant π. |
 | `E` | `const E` | Euler's number e. |
 | `SQRT_2` | `const SQRT_2` | √2. |

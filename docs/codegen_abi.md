@@ -61,8 +61,8 @@ backend - for:
 
 `i128` / `u128` are **rejected at type-check time** (`GT0014`): no tier
 has a 128-bit runtime representation, and the bytecode VM would
-otherwise run them at silent 64-bit width. Use `i64` / `u64`, or split
-the value into two 64-bit halves.
+otherwise run them at silent 64-bit width. Use `i64` / `u64`, or
+`math::big::Int` for a value past 64 bits.
 
 This is the contract: if the program type-checks, it compiles and runs
 with identical output on every tier. There is no codegen path that

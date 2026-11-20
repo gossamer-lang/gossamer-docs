@@ -12,6 +12,7 @@ Goroutine / scheduler introspection and tuning.
 | `max_procs` | `fn max_procs() -> i64` | The most worker threads that run goroutines at once: what `set_max_procs` set, else `GOSSAMER_MAX_PROCS`, else the core count. |
 | `set_max_procs` | `fn set_max_procs(n: i64) -> i64` | Caps the worker threads that run goroutines at once and answers the cap before the call, as Go's `runtime.GOMAXPROCS`; a value below 1 only reads it. Goroutines themselves stay unbounded. |
 | `cycle_collection_supported` | `fn cycle_collection_supported() -> bool` | Reports whether this execution tier reclaims unreachable reference cycles. |
+| `backtrace` | `fn backtrace() -> String` | The calling goroutine's call stack as text, outermost frame first, one `at function (file:line:column)` line each, with the file's name. The function that calls it is always named, at the call's position; an optimized build names the frames above it that it kept, without positions. |
 | `is_main_thread` | `fn is_main_thread() -> bool` | Whether the caller runs on the process main thread, the one `main` starts on. Libraries whose platform APIs belong to that thread, such as windowing on macOS, check it before calling them. |
 | `scheduler_stats_json` | `fn scheduler_stats_json() -> String` | Returns a compact JSON snapshot of goroutine scheduler counters. |
 | `version` | `fn version() -> String` | `version() -> String`: the Gossamer release that built and runs the program, such as "0.75.6". Go's `runtime.Version`. |

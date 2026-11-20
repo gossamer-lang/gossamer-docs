@@ -18,6 +18,8 @@ Built-in container types.
 | `BTreeMap` | `type BTreeMap` | Ordered key-value map backed by BTreeMap. |
 | `Set` | `type Set` | Unique-value set backed by a hash table; literals use `#{a, b}` and empty set literals use `#{}`. |
 | `BTreeSet` | `type BTreeSet` | Ordered unique-value set backed by BTreeSet. |
+| `IndexMap` | `type IndexMap` | Key-value map that keeps insertion order: `new`, `insert` (answers the replaced value), `get`, `contains_key`, `remove`, `len`, `is_empty`, and `keys` / `values` / `entries` in the order keys were first inserted. |
+| `BitSet` | `type BitSet` | Set of non-negative integers stored one bit each: `new`, `insert` / `remove` (answer whether the set changed), `contains`, `len`, `is_empty`, `clear`, and `to_vec` in ascending order. |
 
 <!-- hand-maintained from here: preserved by `gos doc --emit-stdlib` -->
 

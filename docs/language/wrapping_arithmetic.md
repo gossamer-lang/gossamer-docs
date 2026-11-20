@@ -63,8 +63,10 @@ fn main() {
 }
 ```
 
-`v.clamp(lo, hi) as T` saturates an integer, and `v.try_into()` answers a
-`Result` that is `Err` when `v` does not fit. The `lossy_cast` lint
+`v.clamp(lo, hi) as T` saturates an integer, and `v.try_into()`, from an
+integer or a float, answers a `Result` that is `Err` exactly where `as` would
+panic (for a float: NaN, an infinity, or a truncation the target cannot
+hold). The `lossy_cast` lint
 (`GL0062`) marks each plain `as` that can panic and names these spellings.
 
 ## No wrapping methods
