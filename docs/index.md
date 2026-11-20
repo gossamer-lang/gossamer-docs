@@ -2,9 +2,10 @@
 
 A fast-compiling language with Rust-flavoured syntax and a Go-shaped
 runtime. Memory is automatic
-and deterministic - a Swift-like model of reference counting (with
-automatic cycle collection) plus `arena { }` regions, and no tracing
-collector.
+and deterministic - a Swift-like model of reference counting plus
+`arena { }` regions, and no tracing collector. As in Swift, a closure
+stored in what it captures is a cycle, broken with a weak capture
+(`[weak o] || ..`).
 
 Every walk over a collection has a parallel twin. Change `map` to `par_map`
 and it runs on every core you have. See
@@ -83,9 +84,9 @@ unsupported registered triples.
 - **Rust-style type system** - statically-typed, generics with
   trait bounds, pattern-matching, `Option<T>` / `Result<T, E>`.
 - **Swift-like memory model** - deterministic reference counting
-(closely modeled on Swift's ARC, with automatic cycle collection
-added) plus `arena { }` regions reclaim values as the last reference
-dies. No lifetimes, no borrow-checker surface, no tracing collector.
+(closely modeled on Swift's ARC, with weak references and weak closure
+captures for cycles) plus `arena { }` regions reclaim values as the last
+reference dies. No lifetimes, no borrow-checker surface, no tracing collector.
 - **Extensible in Rust** - Write libraries in safe Rust.
 
 ## Where to go next

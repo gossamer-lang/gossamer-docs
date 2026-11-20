@@ -23,6 +23,9 @@ concurrency, and which Rust features are intentionally absent.
 | `dyn Trait` | Declined (GP0061). Use generics or an enum. |
 | `x.wrapping_add(y)`, `x.wrapping_mul(y)` | `x +% y`, `x *% y` |
 | `x.checked_add(y)`, `x.saturating_sub(y)` | Same. |
+| `x as u8` to truncate, `f as i64` to saturate | `x as% u8`, `f as% i64`; a plain `as` panics when the value does not fit |
+| `u8::try_from(x)`, `x.try_into()` | `x.try_into()` with the target from the use site |
+| `Weak` captured by hand to break a closure cycle | `[weak o] \|\| ..` captures `o` weakly |
 | `cargo build` | `gos build` |
 | `cargo test` | `gos test` |
 | `cargo fmt` | `gos fmt` |
@@ -286,8 +289,10 @@ let back: User = json::decode(text)?
 ```
 
 Aggregate values can be used directly in vectors and ordinary structs, and
-any hashable value keys a `Map` or `Set`: integers, strings, tuples,
-structs, and enums, compared by value. Floats are not hashable, as in Rust.
+any value but a table, closure, or handle keys a `Map` or `Set`: integers,
+floats, strings, tuples, arrays, `Vec`s, structs, and enums, compared by
+value. Unlike Rust, a float is a key: keys compare by IEEE total order, so
+`-0.0` and `0.0` are two keys and a NaN key finds itself.
 
 ## Async Code
 

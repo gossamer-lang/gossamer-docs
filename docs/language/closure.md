@@ -131,3 +131,33 @@ fn main() {
     println("{}", next())
 }
 ```
+
+## A closure stored in what it captures
+
+Because a closure keeps its captures alive, one stored in the value it
+captures holds that value while the value holds it. Neither is ever freed,
+and the runtime does not collect the cycle; the `closure_self_cycle` lint
+(`GL0063`) reports the store. Capture the value weakly with a capture list:
+
+```gossamer
+struct Button {
+    clicks: i64
+    on_click: Option<Fn() -> i64>
+}
+
+fn main() {
+    let mut b = Button { clicks: 3, on_click: None }
+    b.on_click = Some([weak b] || match b {
+        Some(b) => b.clicks,
+        None => 0,
+    })
+    if let Some(f) = b.on_click {
+        println(f())  // 3
+    }
+}
+```
+
+Inside the body, each name the list marks `weak` is the `Option` its weak
+reference upgrades to on that call: `Some` while the value lives and `None`
+once it is gone. `b.downgrade()` before the closure and `upgrade()` inside it
+is the same capture written by hand.

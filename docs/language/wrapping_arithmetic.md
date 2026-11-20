@@ -48,6 +48,25 @@ Both operands share one integer type: `i8`-`i64`, `u8`-`u64`, `isize`, or
 `*%` with `*` (level 5), and `+%` and `-%` with `+` and `-` (level 6). On the
 integer lanes of a [lane vector](simd.md) they wrap lane by lane.
 
+## Wrapping casts
+
+A plain `as` checks that its value fits the target and panics with
+`cast overflow` when it does not, as a plain `+` panics on overflow. `as%`
+is the cast that keeps the low bits instead, and on a float it saturates
+(NaN becomes 0):
+
+```gossamer
+fn main() {
+    let v: i64 = 300
+    let f = 1e20
+    println("{} {} {}", v as% u8, f as% i64, v.clamp(0, 255) as u8)  // 44 9223372036854775807 255
+}
+```
+
+`v.clamp(lo, hi) as T` saturates an integer, and `v.try_into()` answers a
+`Result` that is `Err` when `v` does not fit. The `lossy_cast` lint
+(`GL0062`) marks each plain `as` that can panic and names these spellings.
+
 ## No wrapping methods
 
 `x.wrapping_add(y)` and `x.wrapping_mul(y)` are not integer methods. A call

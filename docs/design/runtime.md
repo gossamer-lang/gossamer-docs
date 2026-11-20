@@ -73,12 +73,12 @@ model - reference counting plus arenas, and no tracing collector:
   value's reference-counted children iteratively and frees the
   payload. Weak references follow the Swift-ARC model.
 - **Cycle collection.** The compiled tiers run a Bacon-Rajan
-  trial-deletion pass over suspected cycle roots, both on demand
-  (`runtime::collect_cycles()`) and automatically under allocation
-  pressure. The bytecode VM backs values with `Arc` and does not
-  collect cycles, so `collect_cycles()` is a no-op there: a strong
-  reference cycle leaks under `gos` but is reclaimed under
-  `gos build`.
+  trial-deletion pass over suspected cycle roots when the program asks
+  for it (`runtime::collect_cycles()`); no collector runs on its own. The
+  bytecode VM backs values with `Arc` and does not collect cycles, so
+  `collect_cycles()` is a no-op there. A closure's captures are not
+  traced on any tier, so a closure stored in a value it captures is
+  never freed: capture the value weakly (`[weak o] || ..`).
 - **Aggregate reclamation.** Structs / tuples / arrays are
   heap-allocated via `gos_rt_aggr_alloc` (plain zeroed malloc) and
   freed by the MIR drop pass via `gos_rt_aggr_free` at scope exit.

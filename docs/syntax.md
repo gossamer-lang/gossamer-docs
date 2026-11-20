@@ -181,6 +181,13 @@ maximum, on every tier and in every profile. The REPL prints open ranges without
 realising them, such as `10..` or `..10`. Because `..=` is inclusive, it
 always requires an upper bound; `10..=` is a parse error.
 
+Integer `/` truncates toward zero and `%` keeps the sign of the value it
+divides, as in Rust, C, and Go: `-7 / 2 == -3` and `-7 % 2 == -1`. So
+`n % 2 == 1` is false for a negative odd `n`; test oddness with
+`n % 2 != 0`, or take `n.rem_euclid(k)`, which answers `0..k` for every
+sign. The lint `signed_remainder` (`GL0064`) marks a remainder compared
+with a positive number when its dividend may be negative.
+
 ## Destructuring assignment
 
 A tuple on the left of `=` writes each element to its own target. The

@@ -51,3 +51,21 @@ brace. While `let reference = &mut value` remains active, `value` cannot be
 read or mutated through another path. Use a smaller block when source access
 must resume. In the persistent REPL scope, `%drop reference` ends and removes
 the reference binding explicitly.
+
+## Declared without a value
+
+A `let mut` may leave its value out, and an assignment after it supplies
+one. Every read must follow an assignment on every path that reaches it, or
+the program is rejected with `GT0129`:
+
+```gossamer
+fn label(n: i64) -> String {
+    let mut word: String
+    if n > 5 { word = "big" } else { word = "small" }
+    word
+}
+
+fn main() {
+    println(label(9))
+}
+```

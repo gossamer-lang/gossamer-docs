@@ -85,6 +85,27 @@ The root cohort's policy is collect-all, so one failing goroutine never
 cancels another's work. Writing `cohort { }` explicitly is how you ask
 for a tighter boundary than "the whole program".
 
+When `main` returns, the root cohort drains. Goroutines still running get
+up to 30 seconds, and any left then are named on stderr and abandoned.
+Goroutines parked where nothing left in the program can wake them, every
+one waiting on a channel, a lock, or a join with no timer, I/O, or outside
+thread able to act, can never finish, so they are named and abandoned at
+once:
+
+```
+gossamer: 2 spawned goroutine(s) can never finish: each waits on a channel or lock that nothing left after `main` returned can serve; exiting without them (spawn index 1, 3)
+```
+
+The exit status is the one `main` gave. Inside a function's own
+`cohort { }` the same goroutines are a deadlock the block reports, since
+the block waits for them.
+
+Because `main` needs no block, it is also where a task can be forgotten.
+A handle bound by `let task = spawn(..)` and never used is the lint
+`unjoined_task` (`GL0065`): nothing waits for that task, so `main` goes on,
+and can finish, before its work is done. Join it where the work must be
+finished, or spawn without a binding a task meant to run on its own.
+
 The exemption stops at `main`. A `spawn` in any other function - a free
 function, a method in an `impl` block, a `#[test]` body - must be written
 lexically inside a `cohort { }` in that same function body, at any nesting
