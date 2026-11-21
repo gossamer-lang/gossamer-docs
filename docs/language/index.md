@@ -8,14 +8,14 @@ One page per language feature. Source is `crates/gossamer-std/src/manifest/featu
 | [`lang::let`](let.md) | Immutable binding. |
 | [`lang::let_mut`](let_mut.md) | Mutable bindings can be reassigned and can be the source of `&mut`. |
 | [`lang::if`](if.md) | Conditional expression. |
-| [`lang::match`](match.md) | Exhaustive pattern match expression. |
+| [`lang::match`](match.md) | Exhaustive pattern match expression; an arm an earlier arm already covers can never run and is GM0002. |
 | [`lang::if_let`](if_let.md) | Single-variant pattern sugar. |
 | [`lang::while_let`](while_let.md) | Loop that drains while a pattern matches. |
 | [`lang::for`](for.md) | Iterator-driven loop. |
 | [`lang::loop`](loop.md) | Unconditional loop with `break value`. |
 | [`lang::break`](break.md) | Exit the innermost loop, optionally with a value. |
 | [`lang::continue`](continue.md) | Skip to the next iteration of the innermost loop. |
-| [`lang::return`](return.md) | Exit the enclosing function with a value. |
+| [`lang::return`](return.md) | Exit the enclosing function with a value; a `return` at the end of a line returns nothing, and a statement after one that never completes is GT0135. |
 | [`lang::question_mark`](question_mark.md) | Short-circuit Result / Option propagation operator. |
 | [`lang::pipe`](pipe.md) | Forward-pipe operator `|>`, for composing free functions in a functional style. A step is either a bare callable (`x |> f`) or a closure whose parameter is the piped value (`x |> |v| f(a, v)`). Methods chain on their own and are the shorter spelling; a method chain can feed a pipe. |
 | [`lang::closure`](closure.md) | Lambda expression `|args| body`. |
@@ -40,8 +40,8 @@ One page per language feature. Source is `crates/gossamer-std/src/manifest/featu
 | [`lang::cfg`](cfg.md) | Conditional compilation attribute, resolved for the target a build produces (`gos build --target`, `gos check --target`) rather than the host; `feature = "name"` reads the declaring package's `[features]`, and `#[cfg]` applies to a `use` too. |
 | [`lang::unsafe_extern`](unsafe_extern.md) | `unsafe extern "C" { fn strlen(text: [u8]) -> usize }` declares C functions, called inside `unsafe { }` (GT0097), and `type Name` declares a C type reached only as `ffi::Ptr<Name>` (GT0104). Parameters are scalars, `ffi::Ptr` and `Option<ffi::Ptr>`, out-parameters (`&mut` a scalar or pointer), C function pointers written `Fn(..) -> R` and filled with a named function, slices of scalars or structs, and `#[repr(C)]` structs and `ffi::Union`s by value; results are scalars, pointers, and structs (GT0098). `#[export]` makes a free function a C symbol (GT0113), `[lib] kind` builds a C library and header from the exports, and `[native]` compiles a package's own C sources. `std::ffi` reads and writes foreign memory by copy inside `unsafe` (GT0103), allocates from the C allocator, and holds callback context in `ffi::Handle`. Every call is foreign and unsafe whatever it does, clears and captures `errno` for `ffi::last_errno()` and `ffi::last_os_error()`, and when it blocks lets another worker start the goroutines waiting on its own; `#[link(name, search)]`, `#[link_name]`, and `#[cfg]` choose the library, symbol, and platform. A project refuses native code with `ffi = false` in `project.toml` (the default is `true`), and then a declaration in the project or a dependency is GT0102. |
 | [`lang::attribute`](attribute.md) | Built-in attributes (`#[cfg]`, `#[test]`, `#[bench]`, `#[derive]`). |
-| [`lang::const`](const.md) | Compile-time constant binding. |
-| [`lang::static`](static.md) | Module-level mutable or immutable static slot. |
+| [`lang::const`](const.md) | Compile-time constant binding. Integer initializers evaluate in their declared type at every step, so an overflow, a division by zero, or an out-of-range shift is GT0134, and a constant index past a fixed array's end is GT0133. |
+| [`lang::static`](static.md) | Module-level mutable or immutable static slot. A `static mut` is read and written only inside `unsafe { }` (GT0132); state goroutines share lives in a synchronized `static` such as `sync::AtomicI64`. |
 | [`lang::opaque_nominal_alias`](opaque_nominal_alias.md) | `type Name = new Repr` declares a distinct nominal type over an unchanged runtime representation, erased before lowering so no tier sees one. It inherits equality, ordering, hashing, and formatting - which describe the value both sides share - and nothing else: arithmetic needs the alias's own `impl Add`, and the representation's methods are not in scope. `.into()` converts to and from its own representation; any other pair needs `impl From`. |
 | [`lang::slicing`](slicing.md) | A range in index position takes a subsequence: `xs[1..3]`, `xs[..k]`, `xs[k..]`, `xs[..]`, `xs[a..=b]`, over fixed arrays, slices, `Vec`, and `String`. Bounds clamp rather than panic, matching `substring`; a `String` slice takes byte offsets and snaps to codepoint boundaries. |
 | [`lang::visibility`](visibility.md) | Three visibilities: private by default (the declaring module and its descendants), `pub(package)` (every module of the declaring package), and `pub` (the package's public API). Declared per item, per method, and per struct field; `pub(crate)` / `pub(super)` / `pub(in path)` are rejected (`GP0038`). |

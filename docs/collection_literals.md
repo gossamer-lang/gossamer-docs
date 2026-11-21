@@ -92,6 +92,9 @@ let ages = {"ada": 36, "grace": 37}
 println(ages.get("ada"))
 ```
 
+A literal spells each key once: `{"a": 1, "a": 2}` is `GT0137`, since the
+later entry would silently replace the earlier one.
+
 The empty brace literal creates an empty `Map`.
 
 ```gos
@@ -133,12 +136,24 @@ A range's bounds are keys, so the range is written in the call: `lo..hi`,
 Use `#{...}` for a `Set<T>`.
 
 ```gos
-let seen = #{"ada", "grace", "ada"}
+let seen = #{"ada", "grace"}
 println(seen.len())       // 2
 println(seen.contains("ada"))
 ```
 
-The literal removes duplicates just like repeated `insert` calls.
+A literal spells each element once (`GT0137`); `Set::from([..])` and repeated
+`insert` calls drop the duplicates a run-time sequence holds:
+
+```gos
+let names = Set::from(["ada", "grace", "ada"])
+println(names.len())      // 2
+```
+
+A `Map` and a `Set` hash and compare their keys field by field, so a key type
+with a hand-written `impl PartialEq` is `GT0138` there: the container would
+never call that `eq`. A `BTreeMap` / `BTreeSet` seats keys by `cmp`, and takes
+such a type once it writes an `impl Ord` whose `cmp` answers 0 exactly when
+`eq` is true.
 
 A `Set` is unordered. It answers membership, cardinality, and set algebra;
 every sequence operation is written on the walk `iter()` answers, and the
@@ -156,7 +171,7 @@ An expected `BTreeSet<T>` type shapes the same literal into the sorted set,
 whose `iter()` and `to_vec()` read in ascending order:
 
 ```gos
-let ordered: BTreeSet<String> = #{"grace", "ada", "ada"}
+let ordered: BTreeSet<String> = #{"grace", "ada", "cy"}
 println(ordered.to_vec())
 ```
 

@@ -16,8 +16,11 @@ the hardening roadmap. Reporting details are in
   for C ABIs, executing generated machine code, and context
   switching - kept in the smallest possible scope.
 - No manual memory management in the language: there is no
-  `free`, no raw pointers, and no `unsafe` keyword in Gossamer
-  source. Memory is reclaimed automatically by reference counting on every
+  `free` and no raw pointers in Gossamer source. `unsafe { }` marks only
+  what the compiler cannot check: a call into C, a read or write of foreign
+  memory, and a read or write of a `static mut`, which every goroutine
+  reaches with no lock (`GT0132`). Shared global state belongs in a
+  synchronized `static` such as `sync::AtomicI64`. Memory is reclaimed automatically by reference counting on every
   tier, with an on-demand thread-local cycle collector on compiled tiers. The VM,
   cross-goroutine object graphs, and a closure stored in a value it captures
   can retain strong cycles, so use `Weak<T>`, or a weak capture
@@ -26,6 +29,15 @@ the hardening roadmap. Reporting details are in
   one escape hatch is the low-level `runtime::arena_push()` /
   `arena_pop()` primitive; its `arena { }` block form is statically
   escape-checked (`error[GM0003]`), but the raw calls are not.
+- Source that misstates what it does is refused while compiling: a
+  bidirectional control character anywhere in the text (Trojan Source,
+  CVE-2021-42574, `GP0070`), code after a statement that never completes
+  (`GT0135`), a comparison whose answer is dropped (`GT0136`), a `match`
+  arm an earlier one already covers (`GM0002`), a repeated key in a map or
+  set literal (`GT0137`), and a key type whose hand-written `eq` its
+  container never calls (`GT0138`). Constant arithmetic that would panic
+  every time it runs - an overflow, a division by `0`, a constant index past
+  a fixed array's end - is refused too (`GT0133`, `GT0134`).
 - A curated set of well-known external crates, each reviewed before
   adoption: `clap`, `serde` / `serde_json`, `toml`, `parking_lot`,
   the `crossbeam` channels / deques, `rayon`, `mio`, the `unicode-*`

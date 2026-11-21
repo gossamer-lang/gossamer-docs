@@ -22,7 +22,7 @@ String operations.
 | `rsplit_once` | `fn rsplit_once(text: String, sep: String | char) -> Option<(String, String)>` | Splits on the last occurrence of `sep`; returns Option<(String, String)>. |
 | `count` | `fn count(text: String, needle: String | char) -> i64` | Counts non-overlapping occurrences of `needle`. |
 | `byte_len` | `fn byte_len(text: String) -> i64` | Returns the UTF-8 byte length. |
-| `byte_at` | `fn byte_at(text: String, index: i64) -> i64` | Returns the UTF-8 byte at an index. |
+| `byte_at` | `fn byte_at(text: String, index: i64) -> i64` | Returns the UTF-8 byte at a byte offset; an offset outside the string's bytes panics. |
 | `byte_find` | `fn byte_find(text: String, needle: String | char) -> Option<i64>` | Byte offset of the first match, in the unit `substring`, `slice`, and `byte_at` take; `find` answers a scalar index instead. |
 | `byte_rfind` | `fn byte_rfind(text: String, needle: String | char) -> Option<i64>` | Byte offset of the last match. |
 | `byte_offset` | `fn byte_offset(text: String, char_index: i64) -> Option<i64>` | `byte_offset(text, char_index) -> Option<i64>`: where a scalar index (a `find` answer) starts in bytes; one past the last scalar answers the byte length. |

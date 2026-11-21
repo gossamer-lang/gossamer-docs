@@ -16517,7 +16517,7 @@
       "name": "std::strings::byte_at",
       "kind": "function",
       "signature": "fn byte_at(text: String, index: i64) -> i64",
-      "description": "Returns the UTF-8 byte at an index.",
+      "description": "Returns the UTF-8 byte at a byte offset; an offset outside the string's bytes panics.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",

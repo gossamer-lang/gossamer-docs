@@ -1,6 +1,6 @@
 # `lang::match`
 
-Exhaustive pattern match expression.
+Exhaustive pattern match expression; an arm an earlier arm already covers can never run and is GM0002.
 
 <!-- hand-maintained from here: preserved by `gos doc --emit-stdlib` -->
 

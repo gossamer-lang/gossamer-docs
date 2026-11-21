@@ -41,6 +41,11 @@ of `//` lines immediately above an item (no blank line
 between) is its documentation; a run at the top of a file is
 the module's. Tooling reads these by position.
 
+A bidirectional control character (U+202A to U+202E, U+2066 to U+2069,
+U+200E, U+200F) is refused anywhere in the source, a comment included
+(`GP0070`), because it reorders how a line displays without changing what
+compiles. Inside a literal, write it as an escape: `"\u{202E}"`.
+
 ## Items
 
 ```gossamer
@@ -170,6 +175,20 @@ let label = match status {
 
 Match arms on separate lines do not require commas. Commas remain accepted,
 and are required between expression-bodied arms written on the same line.
+An arm an earlier arm already covers can never run and is `GM0002`.
+
+`return`, `break`, and `continue` at the end of a line end their statement,
+so the next line is never their value. A statement after one that never
+completes is `GT0135`, and a comparison written as a statement (`count == 5`)
+is `GT0136`.
+
+A `static mut` is read and written only inside `unsafe { }` (`GT0132`):
+
+<!-- fragment -->
+```gossamer
+static mut CALLS: i64 = 0
+fn count() { unsafe { CALLS += 1 } }
+```
 
 Integer range expressions are lazy `Iterator<T>` values, where explicitly
 typed bounds preserve their integer type and otherwise default to `i64`. See
