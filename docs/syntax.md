@@ -763,6 +763,18 @@ Format specs follow Rust's `{:spec}` grammar - width, alignment,
 fill, zero-pad, radix, and precision (`{:>8}`, `{:08x}`, `{:^6}`,
 `{:.2}`).
 
+An `Option` rendered with `{}` among other text is the warning `GL0067`,
+because a missing value would read as the word `None` in the sentence. Say
+what a missing value reads as, or write `{:?}` where `Some(..)` / `None` is
+the text meant:
+
+```gossamer
+fn greet(name: Option<String>) {
+    println(f"hello, {name.unwrap_or("guest")}")
+    println(f"lookup answered {name:?}")
+}
+```
+
 For the single-`String` output shape, `+` concatenates without
 adding a separator:
 
