@@ -41,10 +41,11 @@ of `//` lines immediately above an item (no blank line
 between) is its documentation; a run at the top of a file is
 the module's. Tooling reads these by position.
 
-A bidirectional control character (U+202A to U+202E, U+2066 to U+2069,
-U+200E, U+200F) is refused anywhere in the source, a comment included
+A bidirectional embedding, override, or isolate control (U+202A to U+202E,
+U+2066 to U+2069) is refused anywhere in the source, a comment included
 (`GP0070`), because it reorders how a line displays without changing what
-compiles. Inside a literal, write it as an escape: `"\u{202E}"`.
+compiles. Inside a literal, write it as an escape: `"\u{202E}"`. The
+directional marks (U+200E, U+200F, U+061C) reorder nothing and are allowed.
 
 ## Items
 
