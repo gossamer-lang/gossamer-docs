@@ -1544,7 +1544,7 @@ Lexical filesystem-path operations; one grammar on every platform (`/` and `\` s
 | `file_stem` | fn | File name without its extension. |
 | `glob` | fn | `glob(pattern) -> Result<Vec<String>, errors::Error>` - filesystem paths matching a shell glob, sorted so every tier reports the same order. Supports `*`, `?`, `[abc]`, and `**` (this directory and every descendant). Relative patterns resolve against the working directory. Example: `let found = path::glob("src/**/*.gos")?`. |
 | `is_absolute` | fn | Reports whether the path begins with a root: `/`, a drive (`C:/`), or a UNC share (`//host/share`). |
-| `join` | fn | `join(base, segment) -> Result<String, errors::Error>`: `base` and the relative `segment` joined by `/`. A segment that names a path outside `base` is an `Err`: an absolute one (`/etc/passwd`, `C:/x`) or one whose `..` climbs above `base` (`../../etc`). A relative path meant to climb, such as a folder the user typed, resolves with `normalize(f"{base}/{rel}")`. |
+| `join` | fn | Joins two path fragments with `/`; an absolute second fragment replaces the first. |
 | `matches` | fn | `matches(pattern, name) -> bool` - Go `filepath.Match` shell-glob test over a single path segment: `*` and `?` never cross a `/`, `[abc]` is a character class. Spelled `matches` because `match` is a keyword. Example: `path::matches("*.gos", "main.gos")` is true, `path::matches("a*c", "a/c")` is false. |
 | `normalize` | fn | Lexically normalizes the path. |
 | `parent` | fn | Parent directory, or None at the root. |

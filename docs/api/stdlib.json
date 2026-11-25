@@ -14635,8 +14635,8 @@
       "id": "std-path-join",
       "name": "std::path::join",
       "kind": "function",
-      "signature": "fn join(base: String, segment: String) -> Result<String, errors::Error>",
-      "description": "`join(base, segment) -> Result<String, errors::Error>`: `base` and the relative `segment` joined by `/`. A segment that names a path outside `base` is an `Err`: an absolute one (`/etc/passwd`, `C:/x`) or one whose `..` climbs above `base` (`../../etc`). A relative path meant to climb, such as a folder the user typed, resolves with `normalize(f\"{base}/{rel}\")`.",
+      "signature": "fn join(base: String, segment: String) -> String",
+      "description": "Joins two path fragments with `/`; an absolute second fragment replaces the first.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",

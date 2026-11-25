@@ -495,7 +495,7 @@ Gossamer's `pub(crate)`, and it is the only restricted form: `pub(crate)`,
 | `std::env::var(name).ok()` | `env::var(name)` |
 | `std::process::Command` | `process::run(program, args)` |
 | `std::process::exit(code)` | `process::exit(code)` |
-| `Path::join` | `path::join(base, part)?` (an `Err` for a part that leaves `base`) |
+| `Path::join` | `path::join(base, part)` |
 | `std::sync::Mutex` | `sync::Mutex`; `let guard = m.lock()` unlocks at the end of its block |
 | `std::time::Duration::from_millis` | `time::Duration::from_millis` |
 | `reqwest::blocking::get(url)` | `http::get(url, [])` |
