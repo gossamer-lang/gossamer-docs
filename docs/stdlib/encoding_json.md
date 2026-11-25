@@ -115,6 +115,8 @@ GP0068.
 arrives at run time. Every lookup answers an `Option`, so lookups chain:
 
 ```gossamer
+use std::encoding::json
+
 let doc = json::parse("{\"ports\": [8080, 8443], \"limits\": {\"cpu\": 1.5}}")?
 let second = json::get(doc, "ports").and_then(|p| json::at(p, 1))   // Some(8443)
 let cpu = json::pointer(doc, "/limits/cpu").and_then(json::as_f64)  // Some(1.5)

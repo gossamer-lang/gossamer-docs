@@ -404,8 +404,10 @@ share these methods:
 
 | Method | Returns | Notes |
 |---|---|---|
-| `m.lock()` | `()` | Blocks until acquired. |
-| `m.unlock()` | `()` | |
+| `let guard = m.lock()` | guard | Blocks until acquired; the block that binds `guard` releases it at every exit, panics included. A lock released while a panic unwinds is poisoned, and later `lock()` calls panic. |
+| `guard.unlock()` | `()` | Releases the guard's hold sooner; nothing once it is given up. |
+| `m.lock()` | `()` | As a statement: holds the lock until `m.unlock()`. |
+| `m.unlock()` | `()` | Panics in a goroutine that does not hold the lock. |
 
 `sync::RwLock::new(v: i64)`:
 

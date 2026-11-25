@@ -62,6 +62,7 @@ version. This page is auto-generated from the catalogue in
 | [`GP0050`](#gp0050) | Parser | enum representation is not an unsigned width |
 | [`GP0051`](#gp0051) | Parser | `regex!` / `sql!` moved into their modules |
 | [`GP0070`](#gp0070) | Parser | bidirectional control character in source text |
+| [`GP0071`](#gp0071) | Parser | identifier reads as a different name |
 | [`GT0079`](#gt0079) | Types | pointer wrapper written |
 | [`GT0080`](#gt0080) | Types | `String::parse` called |
 | [`GT0081`](#gt0081) | Types | enum representation too narrow for its variants |
@@ -132,6 +133,12 @@ version. This page is auto-generated from the catalogue in
 | [`GT0136`](#gt0136) | Types | comparison used as a statement |
 | [`GT0137`](#gt0137) | Types | duplicate key in a map or set literal |
 | [`GT0138`](#gt0138) | Types | key type compares by a hand-written `eq` |
+| [`GT0139`](#gt0139) | Types | inner `let` hides a `mut` binding nothing assigns |
+| [`GT0140`](#gt0140) | Types | a pure method's value is dropped |
+| [`GT0141`](#gt0141) | Types | `&` or `|` on `bool` operands |
+| [`GT0142`](#gt0142) | Types | computed float compared with an inexact literal |
+| [`GT0143`](#gt0143) | Types | user type ordered without a declared order |
+| [`GT0144`](#gt0144) | Types | mutex guard used beyond its `unlock()` |
 
 ## `GP0001` <a id="gp0001"></a>
 
@@ -432,6 +439,12 @@ Write `regex::compile("…")` and `sql::statement("…")`. A literal argument is
 **Parser** - bidirectional control character in source text
 
 The source text holds a Unicode bidirectional control character (U+202A to U+202E or U+2066 to U+2069), inside a string, a character literal, a comment, or anywhere else. These characters reorder how an editor or a review tool displays the line without changing what compiles, so the code a reader sees is not the code that runs (the Trojan Source attack, CVE-2021-42574). Write the character as an escape inside the literal instead: `"\u{202E}"`.
+
+## `GP0071` <a id="gp0071"></a>
+
+**Parser** - identifier reads as a different name
+
+An identifier reads as a name it is not (Unicode UTS #39). Either it mixes letters of more than one script - `is_аdmin` holds a Cyrillic `а` among Latin letters - or its letters render like a different name of the same file. An editor and a review tool show the two alike, so a reader checks one function and the program calls another. Spell the name in one script, and give names that mean different things spellings that read differently.
 
 ## `GT0079` <a id="gt0079"></a>
 
@@ -852,4 +865,40 @@ A map literal spells the same constant key twice, `{"a": 1, "a": 2}`, or a set l
 **Types** - key type compares by a hand-written `eq`
 
 A `Map` key or `Set` element type is, or holds, a type with a hand-written `impl PartialEq`, and the container never calls that `eq`. A hashed `Map` / `Set` hashes and compares keys structurally, field by field, and a `BTreeMap` / `BTreeSet` seats them by `cmp`, which is structural unless the type writes its own. Either way the container keeps two keys `eq` calls equal. Key on exactly what `eq` compares (a tuple of those fields), or give the type an `impl Ord` whose `cmp` answers 0 exactly when `eq` is true and use a `BTreeMap` / `BTreeSet`.
+
+## `GT0139` <a id="gt0139"></a>
+
+**Types** - inner `let` hides a `mut` binding nothing assigns
+
+An inner `let` hides an outer `let mut` binding that nothing assigns. Nothing assigns the outer binding, borrows it mutably, or calls a method on it, and the inner `let` declares a second binding, so the outer one keeps its value and its `mut` is never used: `let mut status = "pending"`, then `if ok { let status = "done" }`, leaves `status` pending. Assign the outer binding (`status = "done"`), or drop its `mut` and give the inner binding a name of its own.
+
+## `GT0140` <a id="gt0140"></a>
+
+**Types** - a pure method's value is dropped
+
+A statement calls a method that answers a new value and changes nothing, and drops that value: `name.to_uppercase()` on its own line leaves `name` as it was. The methods of `String`, `Vec`, an array, `Map`, `Set`, a number, a `char`, an `Option`, and a `Result` that build a new value (`trim`, `replace`, `map`, `filter`, `len`, `contains`, `abs`, ...) are refused this way; the ones that change their receiver (`push`, `sort`, `insert`, `clear`) are not. Bind the value, assign it back, or pass it on.
+
+## `GT0141` <a id="gt0141"></a>
+
+**Types** - `&` or `|` on `bool` operands
+
+`&` or `|` (or `&=` / `|=`) with `bool` operands. Both sides are evaluated, where `&&` and `||` stop at the first that decides, so a guard such as `(s.len() > 0) & (s[0] == 'a')` still runs the index it was written to protect. Write `&&` or `||`. `^` (exclusive or) on `bool` stays legal: it has no short-circuit form.
+
+## `GT0142` <a id="gt0142"></a>
+
+**Types** - computed float compared with an inexact literal
+
+`==` or `!=` compares a computed float, the result of arithmetic or a call, with a literal its type cannot hold exactly, such as `0.1` or `0.3`. A float holds binary fractions, so `0.1 + 0.2` rounds to a neighbour of `0.3` and `a == 0.3` is false. Compare within a tolerance, `(a - 0.3).abs() < 1e-9`. A literal the type holds exactly (`0.5`, `0.0`, `1.0`) stays legal, as does comparing a binding set straight from the same literal.
+
+## `GT0143` <a id="gt0143"></a>
+
+**Types** - user type ordered without a declared order
+
+A struct or enum is sorted, compared with `<` / `<=` / `>` / `>=`, passed to `min` / `max`, or used as a `BTreeMap` / `BTreeSet` key or a heap element, and declares no order. Equality is structural and automatic, but an order is a choice the type makes: `#[derive(PartialOrd, Ord)]` orders by the fields in declaration order (variants by declaration order), and `impl Ord` writes a `cmp` of its own. `gos check --fix` adds the derive. To order by one field without declaring an order, sort by a key: `sort_by_key(|p| p.x)`.
+
+## `GT0144` <a id="gt0144"></a>
+
+**Types** - mutex guard used beyond its `unlock()`
+
+A mutex guard is used for something other than its own `unlock()`. `let guard = m.lock()` holds the lock to the end of the block that binds `guard`, which releases it at every exit, panics included. A guard passed to a function, returned, stored, or copied would outlive that release. Call `guard.unlock()` to release the lock sooner, and take another guard where the lock is needed again.
 

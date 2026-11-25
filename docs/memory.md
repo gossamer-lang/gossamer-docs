@@ -303,7 +303,9 @@ reference-counted exactly as regular struct fields would be.
 
 You generally don't. Shared aliasing works directly. If you need to
 mutate through a shared handle across goroutines, hold the value in a
-`Mutex<T>` (from `std::sync`) and lock around every mutation.
+`sync::Shared` (one integer) or behind a `sync::Mutex`, taking
+`let guard = m.lock()` around every mutation; the guard's block releases
+the lock on every exit.
 
 ## Stack vs heap - the pragmatic answer
 

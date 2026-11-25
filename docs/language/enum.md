@@ -71,14 +71,17 @@ the current module share is ambiguous and reported with the qualified
 spelling (`GR0009`); an enum in another module never makes a bare name in
 this one ambiguous.
 
-## Compare by value, no derive
+## Compare by value, order by declaration
 
-Enums are value types, so `==` / `!=` / `<` / `<=` / `>` / `>=` are
-synthesized automatically - no `#[derive]` needed - whenever every
-payload is comparable. Ordering is by **variant rank first** (declaration
-order), then payload lexicographically:
+Enums are value types, so `==` and `!=` are synthesized automatically - no
+`#[derive]` needed - whenever every payload is comparable. An order is a
+choice the enum declares: with `#[derive(PartialOrd, Ord)]`, `<` / `<=` /
+`>` / `>=` order by **variant rank first** (declaration order), then
+payload lexicographically. Ordering an enum that declares no order is
+`GT0143`, and `gos check --fix` adds the derive:
 
 ```gossamer
+#[derive(PartialOrd, Ord)]
 enum Shape { Dot, Line(i64), Box(i64, i64) }
 
 println("{}", Shape::Dot < Shape::Line(0))     // true: Dot ranks before Line

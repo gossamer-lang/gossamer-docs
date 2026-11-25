@@ -40,6 +40,6 @@ and `to_vec` return values in sorted order. Use an expected type to shape a
 set literal:
 
 ```gos
-let ordered: BTreeSet<i64> = #{3, 1, 2, 1}
+let ordered: BTreeSet<i64> = #{3, 1, 2}
 println(ordered.to_vec())
 ```

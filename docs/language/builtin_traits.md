@@ -124,7 +124,7 @@ A bound naming `Eq` licenses `eq`, `ne` on a type parameter.
 
 ### `PartialOrd`
 
-What `<`, `<=`, `>`, and `>=` answer: negative when the receiver orders first, zero when the two tie, positive otherwise. Values compare lexicographically by declaration order with no `impl`.
+What `<`, `<=`, `>`, and `>=` answer: negative when the receiver orders first, zero when the two tie, positive otherwise. A struct or enum is ordered only through this `impl` or `#[derive(PartialOrd, Ord)]`, which orders by declaration order.
 
 <!-- fragment -->
 ```gossamer

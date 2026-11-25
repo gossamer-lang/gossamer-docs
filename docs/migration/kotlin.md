@@ -465,5 +465,5 @@ Kotlin defaults to public, Gossamer defaults to private. There is no
 | `@SerialName("key")` / `@Transient` | `#[rename("key")]` / `#[skip]` |
 | `CRC32().apply { update(b) }.value` | `hash::crc32::checksum(b)`, a `u32` |
 | `kotlinx.coroutines.launch` | `spawn(|| { ... })` |
-| `Mutex()` | `sync::Mutex::new()` |
+| `Mutex()` | `sync::Mutex::new()`; `mutex.withLock { }` is `let guard = m.lock()` |
 | `CountDownLatch(n)` | `sync::WaitGroup::new()` |

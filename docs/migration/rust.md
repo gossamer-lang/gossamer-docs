@@ -118,7 +118,7 @@ let values = #[1, 2, 3]
 let fixed = [1, 2, 3]
 let map = {"ada": 36, "grace": 37}
 let empty: Map<String, i64> = {}
-let set = #{"parse", "lower", "parse"}
+let set = #{"parse", "lower"}
 let ordered: BTreeSet<String> = #{"lower", "parse"}
 let queue = Queue::from([1, 2, 3])
 let stack = Stack::from([1, 2, 3])
@@ -247,6 +247,10 @@ struct User {
     age: i64
 }
 ```
+
+Ordering works as in Rust: a struct or enum sorts, takes `<`, or keys a
+`BTreeMap` only with `#[derive(PartialOrd, Ord)]` or an `impl Ord`
+(GT0143, and `gos check --fix` adds the derive). Equality is automatic.
 
 Do not port Rust derives mechanically. `Clone`, `Copy`, `Hash`,
 `Serialize`, and `Deserialize` are automatic rather than derived, and
@@ -491,8 +495,8 @@ Gossamer's `pub(crate)`, and it is the only restricted form: `pub(crate)`,
 | `std::env::var(name).ok()` | `env::var(name)` |
 | `std::process::Command` | `process::run(program, args)` |
 | `std::process::exit(code)` | `process::exit(code)` |
-| `Path::join` | `path::join(base, part)` |
-| `std::sync::Mutex` | `sync::Mutex` |
+| `Path::join` | `path::join(base, part)?` (an `Err` for a part that leaves `base`) |
+| `std::sync::Mutex` | `sync::Mutex`; `let guard = m.lock()` unlocks at the end of its block |
 | `std::time::Duration::from_millis` | `time::Duration::from_millis` |
 | `reqwest::blocking::get(url)` | `http::get(url, [])` |
 | `serde_json::to_string(&v)` / `from_str` | `json::encode(v)?` / `json::decode::<T>(text)?` |

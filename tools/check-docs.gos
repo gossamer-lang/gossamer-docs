@@ -58,11 +58,11 @@ fn checkout(variable: String, name: String) -> String {
     if let Some(dir) = env::var(variable) {
         return dir
     }
-    let sibling = path::join("..", name)
-    if fs::is_file(path::join(sibling, "project.toml")) {
+    let sibling = path::join("..", name).expect("relative segment")
+    if fs::is_file(path::join(sibling, "project.toml").expect("relative segment")) {
         return sibling
     }
-    path::join("../goose-libs", name)
+    path::join("../goose-libs", name).expect("relative segment")
 }
 
 fn libraries() -> Vec<Library> {
@@ -78,7 +78,7 @@ fn libraries() -> Vec<Library> {
 
 /// The project id `checkout`'s manifest declares.
 fn project_id(checkout: String) -> String {
-    for line in read(path::join(checkout, "project.toml")).lines() {
+    for line in read(path::join(checkout, "project.toml").expect("relative segment")).lines() {
         if line.starts_with("id ") || line.starts_with("id=") {
             return line.split("\"")[1]
         }
@@ -101,11 +101,11 @@ fn library_project(dir: String, checkouts: Vec<String>) -> String {
         }
         manifest += f"\"{project_id(root)}\" = {{ path = {root:?} }}\n"
     }
-    if let Err(e) = fs::create_dir_all(path::join(dir, "src")) {
+    if let Err(e) = fs::create_dir_all(path::join(dir, "src").expect("relative segment")) {
         eprintln("check-docs: creating {}: {}", dir, e)
         process::exit(1)
     }
-    if let Err(e) = fs::write(path::join(dir, "project.toml"), manifest.bytes()) {
+    if let Err(e) = fs::write(path::join(dir, "project.toml").expect("relative segment"), manifest.bytes()) {
         eprintln("check-docs: writing the {} project: {}", dir, e)
         process::exit(1)
     }
@@ -199,7 +199,7 @@ fn first_error(report: String) -> String {
 /// that is a program of its own.
 fn project_for(file: String, projects: Vec<(String, String)>) -> String {
     for (pages, project) in projects {
-        if file.starts_with(path::join("docs/ecosystem", pages) + "/") {
+        if file.starts_with(path::join("docs/ecosystem", pages).expect("relative segment") + "/") {
             return project
         }
     }
@@ -209,7 +209,7 @@ fn project_for(file: String, projects: Vec<(String, String)>) -> String {
 fn check_fences(scratch: String, failures: &mut Vec<String>) -> i64 {
     let mut projects = #[]
     for library in libraries() {
-        let dir = path::join(scratch, f"project-{library.pages}")
+        let dir = path::join(scratch, f"project-{library.pages}").expect("relative segment")
         projects.push((library.pages, library_project(dir, library.checkouts)))
     }
     let mut checked = 0
@@ -221,9 +221,9 @@ fn check_fences(scratch: String, failures: &mut Vec<String>) -> i64 {
             }
             checked += 1
             let program = if project.is_empty() {
-                path::join(scratch, f"fence_{checked}.gos")
+                path::join(scratch, f"fence_{checked}.gos").expect("relative segment")
             } else {
-                path::join(project, "src/main.gos")
+                path::join(project, "src/main.gos").expect("relative segment")
             }
             if let Err(e) = fs::write(program, fence.code.bytes()) {
                 failures.push(f"{fence.place}: writing the fence: {e}")
@@ -302,7 +302,7 @@ fn landing_listings(page: String) -> Vec<String> {
 /// Runs each program, recording the ones that do not exit successfully.
 fn check_runs(scratch: String, programs: Vec<(String, String)>, failures: &mut Vec<String>) {
     for (name, code) in programs {
-        let file = path::join(scratch, f"{name}.gos")
+        let file = path::join(scratch, f"{name}.gos").expect("relative segment")
         if let Err(e) = fs::write(file, code.bytes()) {
             failures.push(f"{name}: writing the program: {e}")
             continue
@@ -376,7 +376,7 @@ fn check_repo_facts(failures: &mut Vec<String>) {
 
 fn check_supported_targets(gossamer: String, failures: &mut Vec<String>) {
     let docs = read("docs/supported_targets.md")
-    let matrix = read(path::join(gossamer, "conformance/target_matrix.tsv"))
+    let matrix = read(path::join(gossamer, "conformance/target_matrix.tsv").expect("relative segment"))
     for line in matrix.lines() {
         if line.is_empty() || line.starts_with("#") {
             continue

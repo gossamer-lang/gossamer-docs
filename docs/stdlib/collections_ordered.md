@@ -2,8 +2,10 @@
 
 `BTreeMap<K, V>` and `BTreeSet<T>` keep their entries in a B+ tree ordered the
 way the language orders the key: integers of every width (`u64` / `usize`
-unsigned), floats in IEEE total order, `bool`, `char`, `String`, and tuples,
-structs, and enums field by field. `get`, `insert`, and `remove` take
+unsigned), floats in IEEE total order, `bool`, `char`, `String`, tuples
+field by field, and a struct or enum by the order it declares
+(`#[derive(PartialOrd, Ord)]` or an `impl Ord`; a key type with none is
+GT0143). `get`, `insert`, and `remove` take
 O(log n), and every walk (`iter`, `keys`, `values`, `{:?}`) reads the keys in
 order without sorting a copy.
 

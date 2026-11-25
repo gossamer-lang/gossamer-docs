@@ -123,16 +123,20 @@ see [where methods go](impl.md#where-methods-go) and
 
 Structs are value types. Binding or `.clone()`-ing copies the whole value
 (heap children retained), and `==` / `!=` / `<` / `<=` / `>` / `>=` are
-synthesized automatically - no `#[derive]` needed - whenever every field
-is comparable (scalars, `String`, nested comparable types). Ordering is
-lexicographic by field declaration order:
+synthesized for `==` / `!=` automatically - no `#[derive]` needed -
+whenever every field is comparable (scalars, `String`, nested comparable
+types). Ordering is declared: with `#[derive(PartialOrd, Ord)]`, `<` / `<=`
+/ `>` / `>=`, `sort`, and `min` / `max` order lexicographically by field
+declaration order, and ordering a struct that declares no order is
+`GT0143`:
 
 ```gossamer
+#[derive(PartialOrd, Ord)]
 struct Point { x: i64, y: i64 }
 
 let a = Point { x: 1, y: 2 }
 let b = a.clone()                          // `clone` is a universal builtin
-println("{}", a == b)                     // true, no derive
+println("{}", a == b)                     // true, equality needs no derive
 println("{}", a < Point { x: 1, y: 3 })   // true (lexicographic by field)
 ```
 

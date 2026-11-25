@@ -6,7 +6,7 @@ Lexical filesystem-path operations; one grammar on every platform (`/` and `\` s
 
 | Item | Signature | Description |
 |---|---|---|
-| `join` | `fn join(base: String, segment: String) -> String` | Joins two path fragments with `/`; an absolute second fragment replaces the first. |
+| `join` | `fn join(base: String, segment: String) -> Result<String, errors::Error>` | `join(base, segment) -> Result<String, errors::Error>`: `base` and the relative `segment` joined by `/`. A segment that names a path outside `base` is an `Err`: an absolute one (`/etc/passwd`, `C:/x`) or one whose `..` climbs above `base` (`../../etc`). A relative path meant to climb, such as a folder the user typed, resolves with `normalize(f"{base}/{rel}")`. |
 | `walk` | `fn walk(path: String, visit: Fn(fs::DirInfo) -> Result<(), io::Error>) -> Result<(), io::Error>` | Recursively visits every descendant entry under a directory, the path-module spelling of fs::walk_dir. |
 | `components` | `fn components(path: String) -> Vec<String>` | Returns Rust-like lexical path components. |
 | `prefixes` | `fn prefixes(path: String) -> Vec<String>` | Returns cumulative Rust-like lexical path prefixes. |

@@ -215,7 +215,7 @@
       "name": "std::bufio::Reader",
       "kind": "type",
       "signature": null,
-      "description": "Buffered reader.",
+      "description": "Reads an `fs::File` a chunk at a time: `Reader::new(file)`, then `read_line` (answers `Ok(None)` at the end; the line leaves out its `\\n` and a `\\r` before it), `lines`, and `read_to_string`, each answering a `Result`.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -253,7 +253,7 @@
       "name": "std::bufio::Writer",
       "kind": "type",
       "signature": null,
-      "description": "Buffered writer.",
+      "description": "Writes to an `fs::File` through a buffer: `Writer::new(file)` (4096 bytes) or `Writer::with_capacity(file, n)`, then `write`, `write_bytes`, and `flush`. Buffered bytes reach the file before any other call on it, at `flush`, when the last handle to the file goes, and when the program ends.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -14635,8 +14635,8 @@
       "id": "std-path-join",
       "name": "std::path::join",
       "kind": "function",
-      "signature": "fn join(base: String, segment: String) -> String",
-      "description": "Joins two path fragments with `/`; an absolute second fragment replaces the first.",
+      "signature": "fn join(base: String, segment: String) -> Result<String, errors::Error>",
+      "description": "`join(base, segment) -> Result<String, errors::Error>`: `base` and the relative `segment` joined by `/`. A segment that names a path outside `base` is an `Err`: an absolute one (`/etc/passwd`, `C:/x`) or one whose `..` climbs above `base` (`../../etc`). A relative path meant to climb, such as a folder the user typed, resolves with `normalize(f\"{base}/{rel}\")`.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
@@ -18170,7 +18170,7 @@
       "name": "std::time::Time",
       "kind": "type",
       "signature": null,
-      "description": "A wall-clock instant with the location it is read in: `now()`, `from_unix` / `from_unix_ms` / `from_unix_nanos`, `parse_rfc3339` (keeps the written offset), `format_rfc3339`, `civil()`, `in_location` / `utc`, `+` / `-` a `Duration`, and `a - b` answering the `Duration` between two instants.",
+      "description": "A wall-clock instant with the location it is read in: `now()`, `from_unix` / `from_unix_ms` / `from_unix_nanos`, `parse_rfc3339` (keeps the written offset), `format_rfc3339`, `civil()`, `in_location` / `utc`, `add_date(years, months, days)` (moves the calendar date and keeps the time of day, refusing a time the change of date skips or repeats), `+` / `-` a `Duration` (elapsed time), and `a - b` answering the `Duration` between two instants.",
       "lifecycle": "experimental",
       "tier_support": [
         "not_audited",
